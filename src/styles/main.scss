@@ -1,0 +1,29 @@
+@import "overrides";
+@import "foundation-sites/scss/foundation";
+@include foundation-everything($flex: true);
+
+/**
+ * Custom Styles
+ */
+
+.off-canvas-wrapper,
+.off-canvas-wrapper-inner {
+  height: 100%;
+}
+
+#offCanvas {
+  min-height: 100%;
+  z-index: 1;
+  box-shadow: $maincontent-shadow;
+}
+
+#map {
+  width: 100%;
+  height: 100vh;
+  position: absolute !important;
+}
+
+.map-overlay {
+  position: relative;
+  z-index: 1;
+}
