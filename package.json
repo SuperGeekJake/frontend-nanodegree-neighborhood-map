@@ -2,19 +2,21 @@
   "name": "fend-neighborhood-map",
   "version": "1.0.0",
   "description": "",
-  "main": "gulpfile.js",
+  "main": "dist/index.html",
   "private": true,
   "scripts": {
+    "install": "typings install",
     "test": "echo \"Error: no test specified\" && exit 1",
     "gulp": "gulp",
+    "bower": "bower",
     "typings": "typings"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SuperGeekJake/frontend-nanodegree-neighborhood-map.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "SuperGeekJake",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/SuperGeekJake/frontend-nanodegree-neighborhood-map/issues"
   },

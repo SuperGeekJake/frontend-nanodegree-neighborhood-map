@@ -16,6 +16,7 @@
     "tests"
   ],
   "dependencies": {
-    "knockout": "^3.4.0"
+    "knockout": "^3.4.0",
+    "foundation-sites": "^6.2.3"
   }
 }
