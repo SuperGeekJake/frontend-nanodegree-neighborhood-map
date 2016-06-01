@@ -1,4 +1,5 @@
 /* jshint node: true, esversion: 6 */
+'use strict';
 
 const gulp = require('gulp');
 const run = require('run-sequence');
@@ -12,6 +13,13 @@ const buffer = require('vinyl-buffer');
 const source = require('vinyl-source-stream');
 const sass = require('gulp-sass');
 const browserSync = require('browser-sync').create();
+const argv = require('yargs')
+  .option('p', {
+    alias: 'production',
+    default: false,
+    type: 'boolean'
+  })
+  .argv;
 
 const srcPaths = {
   images: 'src/images/**/*',
@@ -26,46 +34,77 @@ gulp.task('clean', () => {
 });
 
 gulp.task('build:images', () => {
-  gulp.src(srcPaths.images)
-    .pipe(imagemin())
-    .pipe(gulp.dest('dist/img'));
+  if (argv.p) {
+    return gulp.src(srcPaths.images)
+      .pipe(imagemin())
+      .pipe(gulp.dest('dist/img'));
+  } else {
+    return gulp.src(srcPaths.images)
+      .pipe(gulp.dest('dist/img'));
+  }
 });
 
 gulp.task('build:pages', () => {
-  return gulp.src(srcPaths.pages)
-    .pipe(htmlmin({collapseWhitespace: true}))
-    .pipe(gulp.dest('dist'));
+  if (argv.p) {
+    return gulp.src(srcPaths.pages)
+      .pipe(htmlmin({collapseWhitespace: true}))
+      .pipe(gulp.dest('dist'));
+  } else {
+    return gulp.src(srcPaths.pages)
+      .pipe(gulp.dest('dist'));
+  }
 });
 
 gulp.task('build:scripts', () => {
-  return browserify()
-    .add(srcPaths.app)
-    .plugin('tsify', {
-      module: "commonjs",
-      target: "es5",
-      noImplicitAny: false,
-      sourceMap: false
-    })
-    .bundle()
-    .on('error', (error) => console.error(error.toString()))
-    .pipe(source('bundle.js'))
-    .pipe(buffer())
-    .pipe(uglify())
-    .pipe(gulp.dest('dist/js'));
+  let tsConfig = require('./tsconfig.json').compilerOptions;
+
+  if (argv.p) {
+    return browserify()
+      .add(srcPaths.app)
+      .plugin('tsify', tsConfig)
+      .bundle()
+      .on('error', (error) => console.error(error.toString()))
+      .pipe(source('bundle.js'))
+      .pipe(buffer())
+      .pipe(uglify())
+      .pipe(gulp.dest('dist/js'));
+  } else {
+    // TODO: Add source mapping
+    return browserify()
+      .add(srcPaths.app)
+      .plugin('tsify', tsConfig)
+      .bundle()
+      .on('error', (error) => console.error(error.toString()))
+      .pipe(source('bundle.js'))
+      .pipe(buffer())
+      .pipe(gulp.dest('dist/js'));
+  }
 });
 
 gulp.task('build:styles', () => {
-	gulp.src(srcPaths.styles)
-    .pipe(sass({
-      includePaths: [
-        'bower_components'
-      ]
-    }).on('error', sass.logError))
-		.pipe(gulp.dest('dist/css'));
+  if (argv.p) {
+    return gulp.src(srcPaths.styles)
+      .pipe(sass({
+        outputStyle: 'compressed',
+        includePaths: [
+          'bower_components'
+        ]
+      }).on('error', sass.logError))
+  		.pipe(gulp.dest('dist/css'));
+  } else {
+    // TODO: Add source mapping
+    return gulp.src(srcPaths.styles)
+      .pipe(sass({
+        includePaths: [
+          'bower_components'
+        ]
+      }).on('error', sass.logError))
+  		.pipe(gulp.dest('dist/css'));
+  }
 });
 
 gulp.task('default', ['clean'], (cb) => {
-  run(['build:pages', 'build:styles', 'build:images', 'build:scripts'], cb);
+  return run(['build:pages', 'build:styles', 'build:images', 'build:scripts'], cb);
 });
 
 gulp.task('watch', ['default'], () => {
