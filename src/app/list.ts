@@ -1,8 +1,12 @@
-import {map} from './map';
+import {Injectable} from '@angular/core';
+import {MapComponent} from './map';
 
-class List {
+@Injectable()
+export class ListComponent {
   filter: KnockoutObservable<string> = ko.observable('');
-  items: KnockoutObservableArray<google.maps.Marker> = ko.observableArray(map.markers);
+  items: KnockoutObservableArray<google.maps.Marker> = ko.observableArray(this.map.markers);
+
+  constructor(public map: MapComponent) {}
 
   getItems = ko.pureComputed(() => {
     let filter = this.filter();
@@ -14,15 +18,14 @@ class List {
 
       // Return item if filter is a substring of item
       if (title.indexOf(filter.toLowerCase()) > -1) {
-        map.markers[index].setVisible(true);
+        this.map.markers[index].setVisible(true);
         index++;
         return true;
       } else {
-        map.markers[index].setVisible(false);
+        this.map.markers[index].setVisible(false);
         index++;
         return false;
       }
     });
   });
 }
-export const list = new List();

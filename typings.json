@@ -2,6 +2,7 @@
   "name": "fend-neighborhood-map",
   "dependencies": {},
   "globalDependencies": {
+    "core-js": "registry:dt/core-js#0.0.0+20160317120654",
     "foundation-sites": "registry:dt/foundation-sites#6.1.1+20160317120654",
     "google.maps": "registry:dt/google.maps#3.20.0+20160414124451",
     "jquery": "registry:dt/jquery#1.10.0+20160417213236",

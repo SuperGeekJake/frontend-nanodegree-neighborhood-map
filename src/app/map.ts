@@ -1,4 +1,7 @@
-class Map extends google.maps.Map {
+import {Injectable} from '@angular/core';
+
+@Injectable()
+export class MapComponent extends google.maps.Map {
   markers: Array<google.maps.Marker>;
 
   constructor() {
@@ -52,5 +55,3 @@ class Map extends google.maps.Map {
     ];
   }
 }
-
-export const map = new Map();
