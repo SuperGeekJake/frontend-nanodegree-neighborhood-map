@@ -1,10 +1,11 @@
 import {Injectable} from '@angular/core';
+import {Marker} from './marker';
 import {MapComponent} from './map';
 
 @Injectable()
 export class ListComponent {
   filter: KnockoutObservable<string> = ko.observable('');
-  items: KnockoutObservableArray<google.maps.Marker> = ko.observableArray(this.map.markers);
+  items: KnockoutObservableArray<Marker> = ko.observableArray(this.map.markers);
 
   constructor(public map: MapComponent) {}
 
@@ -14,6 +15,7 @@ export class ListComponent {
 
     let index = 0;
     return ko.utils.arrayFilter(this.items(), (item) => {
+      console.log('Running filter!');
       let title = item.getTitle().toLowerCase();
 
       // Return item if filter is a substring of item

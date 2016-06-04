@@ -23,9 +23,10 @@
               <input type="search" placeholder="Search…" data-bind="value: filter, valueUpdate: 'keyup'" autocomplete="off">
             </li>
           </ul>
-          <ul class="vertical menu" data-bind="template: {foreach: getItems}">
-            <li>
-              <a href="#" data-bind="text: title"></a>
+          <ul class="accordion" data-accordion data-allow-all-closed="true" data-bind="template: {foreach: getItems}">
+            <li class="accordion-item" data-accordion-item data-bind="click: onClick">
+              <a href="#" class="accordion-title" data-bind="text: title"></a>
+              <div class="accordion-content" data-tab-content data-bind="text: description"></div>
             </li>
           </ul>
         </nav>

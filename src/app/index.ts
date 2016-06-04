@@ -7,9 +7,9 @@ class App {
     public map: MapComponent,
     public list: ListComponent
   ) {
-    $(document).foundation();
-
     ko.applyBindings(list);
+
+    $(document).foundation();
   }
 }
 
