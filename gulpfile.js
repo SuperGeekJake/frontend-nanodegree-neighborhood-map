@@ -56,12 +56,13 @@ gulp.task('build:pages', () => {
 });
 
 gulp.task('build:scripts', () => {
-  let tsConfig = require('./tsconfig.json').compilerOptions;
+  // Note: tsify automatically uses tsconfig.json
+  // Note: Browserify doesn't support ES6
 
   if (argv.p) {
     return browserify()
       .add(srcPaths.app)
-      .plugin('tsify', tsConfig)
+      .plugin('tsify')
       .bundle()
       .on('error', (error) => console.error(error.toString()))
       .pipe(source('bundle.js'))
@@ -72,7 +73,7 @@ gulp.task('build:scripts', () => {
     // TODO: Add source mapping
     return browserify()
       .add(srcPaths.app)
-      .plugin('tsify', tsConfig)
+      .plugin('tsify')
       .bundle()
       .on('error', (error) => console.error(error.toString()))
       .pipe(source('bundle.js'))
