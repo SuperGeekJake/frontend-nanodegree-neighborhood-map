@@ -1,22 +1,31 @@
 import {ReflectiveInjector} from '@angular/core';
+import {HTTP_PROVIDERS} from '@angular/http';
 import {MapComponent} from './map';
-import {ListComponent} from './list';
+import {FourSquare, LocationList} from './location';
+
+var injector = ReflectiveInjector.resolveAndCreate([
+  HTTP_PROVIDERS,
+  MapComponent,
+  FourSquare,
+  LocationList
+]);
 
 class App {
   constructor(
     public map: MapComponent,
-    public list: ListComponent
+    public list: LocationList
   ) {
     ko.applyBindings(list);
 
-    $(document).foundation();
+    // list.loading$.subscribe((val: boolean) => {
+    //   if (!val) list.addToMap(map);
+    // });
+
+    // $(document).foundation();
   }
 }
 
-interface Window { app: App; }
-
-var injector = ReflectiveInjector.resolveAndCreate([MapComponent, ListComponent]);
 window.app = new App(
   injector.get(MapComponent),
-  injector.get(ListComponent)
+  injector.get(LocationList)
 );

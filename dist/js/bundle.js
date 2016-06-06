@@ -4673,7 +4673,7 @@ var EventEmitter = (function (_super) {
 }(Subject_1.Subject));
 exports.EventEmitter = EventEmitter;
 
-},{"./lang":35,"./promise":36,"rxjs/Observable":76,"rxjs/Subject":78,"rxjs/observable/PromiseObservable":82,"rxjs/operator/toPromise":83}],31:[function(require,module,exports){
+},{"./lang":35,"./promise":36,"rxjs/Observable":97,"rxjs/Subject":99,"rxjs/observable/PromiseObservable":105,"rxjs/operator/toPromise":108}],31:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -11561,6 +11561,1488 @@ exports.NgZoneImpl = NgZoneImpl;
 
 },{}],76:[function(require,module,exports){
 "use strict";
+/**
+* @module
+* @description
+* The http module provides services to perform http requests. To get started, see the {@link Http}
+* class.
+*/
+var core_1 = require('@angular/core');
+var http_1 = require('./src/http');
+var xhr_backend_1 = require('./src/backends/xhr_backend');
+var jsonp_backend_1 = require('./src/backends/jsonp_backend');
+var browser_xhr_1 = require('./src/backends/browser_xhr');
+var browser_jsonp_1 = require('./src/backends/browser_jsonp');
+var base_request_options_1 = require('./src/base_request_options');
+var base_response_options_1 = require('./src/base_response_options');
+var static_request_1 = require('./src/static_request');
+exports.Request = static_request_1.Request;
+var static_response_1 = require('./src/static_response');
+exports.Response = static_response_1.Response;
+var interfaces_1 = require('./src/interfaces');
+exports.Connection = interfaces_1.Connection;
+exports.ConnectionBackend = interfaces_1.ConnectionBackend;
+var browser_xhr_2 = require('./src/backends/browser_xhr');
+exports.BrowserXhr = browser_xhr_2.BrowserXhr;
+var base_request_options_2 = require('./src/base_request_options');
+exports.BaseRequestOptions = base_request_options_2.BaseRequestOptions;
+exports.RequestOptions = base_request_options_2.RequestOptions;
+var base_response_options_2 = require('./src/base_response_options');
+exports.BaseResponseOptions = base_response_options_2.BaseResponseOptions;
+exports.ResponseOptions = base_response_options_2.ResponseOptions;
+var xhr_backend_2 = require('./src/backends/xhr_backend');
+exports.XHRBackend = xhr_backend_2.XHRBackend;
+exports.XHRConnection = xhr_backend_2.XHRConnection;
+var jsonp_backend_2 = require('./src/backends/jsonp_backend');
+exports.JSONPBackend = jsonp_backend_2.JSONPBackend;
+exports.JSONPConnection = jsonp_backend_2.JSONPConnection;
+var http_2 = require('./src/http');
+exports.Http = http_2.Http;
+exports.Jsonp = http_2.Jsonp;
+var headers_1 = require('./src/headers');
+exports.Headers = headers_1.Headers;
+var enums_1 = require('./src/enums');
+exports.ResponseType = enums_1.ResponseType;
+exports.ReadyState = enums_1.ReadyState;
+exports.RequestMethod = enums_1.RequestMethod;
+var url_search_params_1 = require('./src/url_search_params');
+exports.URLSearchParams = url_search_params_1.URLSearchParams;
+/**
+ * Provides a basic set of injectables to use the {@link Http} service in any application.
+ *
+ * The `HTTP_PROVIDERS` should be included either in a component's injector,
+ * or in the root injector when bootstrapping an application.
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/snj7Nv?p=preview))
+ *
+ * ```
+ * import {Component} from '@angular/core';
+ * import {bootstrap} from '@angular/platform-browser/browser';
+ * import {NgFor} from '@angular/common';
+ * import {HTTP_PROVIDERS, Http} from '@angular/http';
+ *
+ * @Component({
+ *   selector: 'app',
+ *   providers: [HTTP_PROVIDERS],
+ *   template: `
+ *     <div>
+ *       <h1>People</h1>
+ *       <ul>
+ *         <li *ngFor="let person of people">
+ *           {{person.name}}
+ *         </li>
+ *       </ul>
+ *     </div>
+ *   `,
+ *   directives: [NgFor]
+ * })
+ * export class App {
+ *   people: Object[];
+ *   constructor(http:Http) {
+ *     http.get('people.json').subscribe(res => {
+ *       this.people = res.json();
+ *     });
+ *   }
+ *   active:boolean = false;
+ *   toggleActiveState() {
+ *     this.active = !this.active;
+ *   }
+ * }
+ *
+ * bootstrap(App)
+ *   .catch(err => console.error(err));
+ * ```
+ *
+ * The primary public API included in `HTTP_PROVIDERS` is the {@link Http} class.
+ * However, other providers required by `Http` are included,
+ * which may be beneficial to override in certain cases.
+ *
+ * The providers included in `HTTP_PROVIDERS` include:
+ *  * {@link Http}
+ *  * {@link XHRBackend}
+ *  * `BrowserXHR` - Private factory to create `XMLHttpRequest` instances
+ *  * {@link RequestOptions} - Bound to {@link BaseRequestOptions} class
+ *  * {@link ResponseOptions} - Bound to {@link BaseResponseOptions} class
+ *
+ * There may be cases where it makes sense to extend the base request options,
+ * such as to add a search string to be appended to all URLs.
+ * To accomplish this, a new provider for {@link RequestOptions} should
+ * be added in the same injector as `HTTP_PROVIDERS`.
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/aCMEXi?p=preview))
+ *
+ * ```
+ * import {provide} from '@angular/core';
+ * import {bootstrap} from '@angular/platform-browser/browser';
+ * import {HTTP_PROVIDERS, BaseRequestOptions, RequestOptions} from '@angular/http';
+ *
+ * class MyOptions extends BaseRequestOptions {
+ *   search: string = 'coreTeam=true';
+ * }
+ *
+ * bootstrap(App, [HTTP_PROVIDERS, provide(RequestOptions, {useClass: MyOptions})])
+ *   .catch(err => console.error(err));
+ * ```
+ *
+ * Likewise, to use a mock backend for unit tests, the {@link XHRBackend}
+ * provider should be bound to {@link MockBackend}.
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/7LWALD?p=preview))
+ *
+ * ```
+ * import {provide} from '@angular/core';
+ * import {bootstrap} from '@angular/platform-browser/browser';
+ * import {HTTP_PROVIDERS, Http, Response, XHRBackend} from '@angular/http';
+ * import {MockBackend} from '@angular/http/testing';
+ *
+ * var people = [{name: 'Jeff'}, {name: 'Tobias'}];
+ *
+ * var injector = Injector.resolveAndCreate([
+ *   HTTP_PROVIDERS,
+ *   MockBackend,
+ *   provide(XHRBackend, {useExisting: MockBackend})
+ * ]);
+ * var http = injector.get(Http);
+ * var backend = injector.get(MockBackend);
+ *
+ * // Listen for any new requests
+ * backend.connections.observer({
+ *   next: connection => {
+ *     var response = new Response({body: people});
+ *     setTimeout(() => {
+ *       // Send a response to the request
+ *       connection.mockRespond(response);
+ *     });
+ *   }
+ * });
+ *
+ * http.get('people.json').observer({
+ *   next: res => {
+ *     // Response came from mock backend
+ *     console.log('first person', res.json()[0].name);
+ *   }
+ * });
+ * ```
+ */
+exports.HTTP_PROVIDERS = [
+    // TODO(pascal): use factory type annotations once supported in DI
+    // issue: https://github.com/angular/angular/issues/3183
+    core_1.provide(http_1.Http, {
+        useFactory: function (xhrBackend, requestOptions) {
+            return new http_1.Http(xhrBackend, requestOptions);
+        },
+        deps: [xhr_backend_1.XHRBackend, base_request_options_1.RequestOptions]
+    }),
+    browser_xhr_1.BrowserXhr,
+    core_1.provide(base_request_options_1.RequestOptions, { useClass: base_request_options_1.BaseRequestOptions }),
+    core_1.provide(base_response_options_1.ResponseOptions, { useClass: base_response_options_1.BaseResponseOptions }),
+    xhr_backend_1.XHRBackend
+];
+/**
+ * See {@link HTTP_PROVIDERS} instead.
+ *
+ * @deprecated
+ */
+exports.HTTP_BINDINGS = exports.HTTP_PROVIDERS;
+/**
+ * Provides a basic set of providers to use the {@link Jsonp} service in any application.
+ *
+ * The `JSONP_PROVIDERS` should be included either in a component's injector,
+ * or in the root injector when bootstrapping an application.
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/vmeN4F?p=preview))
+ *
+ * ```
+ * import {Component} from '@angular/core';
+ * import {NgFor} from '@angular/common';
+ * import {JSONP_PROVIDERS, Jsonp} from '@angular/http';
+ *
+ * @Component({
+ *   selector: 'app',
+ *   providers: [JSONP_PROVIDERS],
+ *   template: `
+ *     <div>
+ *       <h1>People</h1>
+ *       <ul>
+ *         <li *ngFor="let person of people">
+ *           {{person.name}}
+ *         </li>
+ *       </ul>
+ *     </div>
+ *   `,
+ *   directives: [NgFor]
+ * })
+ * export class App {
+ *   people: Array<Object>;
+ *   constructor(jsonp:Jsonp) {
+ *     jsonp.request('people.json').subscribe(res => {
+ *       this.people = res.json();
+ *     })
+ *   }
+ * }
+ * ```
+ *
+ * The primary public API included in `JSONP_PROVIDERS` is the {@link Jsonp} class.
+ * However, other providers required by `Jsonp` are included,
+ * which may be beneficial to override in certain cases.
+ *
+ * The providers included in `JSONP_PROVIDERS` include:
+ *  * {@link Jsonp}
+ *  * {@link JSONPBackend}
+ *  * `BrowserJsonp` - Private factory
+ *  * {@link RequestOptions} - Bound to {@link BaseRequestOptions} class
+ *  * {@link ResponseOptions} - Bound to {@link BaseResponseOptions} class
+ *
+ * There may be cases where it makes sense to extend the base request options,
+ * such as to add a search string to be appended to all URLs.
+ * To accomplish this, a new provider for {@link RequestOptions} should
+ * be added in the same injector as `JSONP_PROVIDERS`.
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/TFug7x?p=preview))
+ *
+ * ```
+ * import {provide} from '@angular/core';
+ * import {bootstrap} from '@angular/platform-browser/browser';
+ * import {JSONP_PROVIDERS, BaseRequestOptions, RequestOptions} from '@angular/http';
+ *
+ * class MyOptions extends BaseRequestOptions {
+ *   search: string = 'coreTeam=true';
+ * }
+ *
+ * bootstrap(App, [JSONP_PROVIDERS, provide(RequestOptions, {useClass: MyOptions})])
+ *   .catch(err => console.error(err));
+ * ```
+ *
+ * Likewise, to use a mock backend for unit tests, the {@link JSONPBackend}
+ * provider should be bound to {@link MockBackend}.
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/HDqZWL?p=preview))
+ *
+ * ```
+ * import {provide, Injector} from '@angular/core';
+ * import {JSONP_PROVIDERS, Jsonp, Response, JSONPBackend} from '@angular/http';
+ * import {MockBackend} from '@angular/http/testing';
+ *
+ * var people = [{name: 'Jeff'}, {name: 'Tobias'}];
+ * var injector = Injector.resolveAndCreate([
+ *   JSONP_PROVIDERS,
+ *   MockBackend,
+ *   provide(JSONPBackend, {useExisting: MockBackend})
+ * ]);
+ * var jsonp = injector.get(Jsonp);
+ * var backend = injector.get(MockBackend);
+ *
+ * // Listen for any new requests
+ * backend.connections.observer({
+ *   next: connection => {
+ *     var response = new Response({body: people});
+ *     setTimeout(() => {
+ *       // Send a response to the request
+ *       connection.mockRespond(response);
+ *     });
+ *   }
+ * });
+
+ * jsonp.get('people.json').observer({
+ *   next: res => {
+ *     // Response came from mock backend
+ *     console.log('first person', res.json()[0].name);
+ *   }
+ * });
+ * ```
+ */
+exports.JSONP_PROVIDERS = [
+    // TODO(pascal): use factory type annotations once supported in DI
+    // issue: https://github.com/angular/angular/issues/3183
+    core_1.provide(http_1.Jsonp, {
+        useFactory: function (jsonpBackend, requestOptions) {
+            return new http_1.Jsonp(jsonpBackend, requestOptions);
+        },
+        deps: [jsonp_backend_1.JSONPBackend, base_request_options_1.RequestOptions]
+    }),
+    browser_jsonp_1.BrowserJsonp,
+    core_1.provide(base_request_options_1.RequestOptions, { useClass: base_request_options_1.BaseRequestOptions }),
+    core_1.provide(base_response_options_1.ResponseOptions, { useClass: base_response_options_1.BaseResponseOptions }),
+    core_1.provide(jsonp_backend_1.JSONPBackend, { useClass: jsonp_backend_1.JSONPBackend_ })
+];
+/**
+ * See {@link JSONP_PROVIDERS} instead.
+ *
+ * @deprecated
+ */
+exports.JSON_BINDINGS = exports.JSONP_PROVIDERS;
+
+},{"./src/backends/browser_jsonp":78,"./src/backends/browser_xhr":79,"./src/backends/jsonp_backend":80,"./src/backends/xhr_backend":81,"./src/base_request_options":82,"./src/base_response_options":83,"./src/enums":84,"./src/headers":90,"./src/http":91,"./src/interfaces":93,"./src/static_request":94,"./src/static_response":95,"./src/url_search_params":96,"@angular/core":1}],77:[function(require,module,exports){
+"use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
+__export(require('./http'));
+
+},{"./http":76}],78:[function(require,module,exports){
+"use strict";
+var core_1 = require('@angular/core');
+var lang_1 = require('../../src/facade/lang');
+var _nextRequestId = 0;
+exports.JSONP_HOME = '__ng_jsonp__';
+var _jsonpConnections = null;
+function _getJsonpConnections() {
+    if (_jsonpConnections === null) {
+        _jsonpConnections = lang_1.global[exports.JSONP_HOME] = {};
+    }
+    return _jsonpConnections;
+}
+var BrowserJsonp = (function () {
+    function BrowserJsonp() {
+    }
+    // Construct a <script> element with the specified URL
+    BrowserJsonp.prototype.build = function (url) {
+        var node = document.createElement('script');
+        node.src = url;
+        return node;
+    };
+    BrowserJsonp.prototype.nextRequestID = function () { return "__req" + _nextRequestId++; };
+    BrowserJsonp.prototype.requestCallback = function (id) { return exports.JSONP_HOME + "." + id + ".finished"; };
+    BrowserJsonp.prototype.exposeConnection = function (id, connection) {
+        var connections = _getJsonpConnections();
+        connections[id] = connection;
+    };
+    BrowserJsonp.prototype.removeConnection = function (id) {
+        var connections = _getJsonpConnections();
+        connections[id] = null;
+    };
+    // Attach the <script> element to the DOM
+    BrowserJsonp.prototype.send = function (node) { document.body.appendChild((node)); };
+    // Remove <script> element from the DOM
+    BrowserJsonp.prototype.cleanup = function (node) {
+        if (node.parentNode) {
+            node.parentNode.removeChild((node));
+        }
+    };
+    BrowserJsonp.decorators = [
+        { type: core_1.Injectable },
+    ];
+    return BrowserJsonp;
+}());
+exports.BrowserJsonp = BrowserJsonp;
+
+},{"../../src/facade/lang":89,"@angular/core":1}],79:[function(require,module,exports){
+"use strict";
+var core_1 = require('@angular/core');
+var BrowserXhr = (function () {
+    function BrowserXhr() {
+    }
+    BrowserXhr.prototype.build = function () { return (new XMLHttpRequest()); };
+    BrowserXhr.decorators = [
+        { type: core_1.Injectable },
+    ];
+    BrowserXhr.ctorParameters = [];
+    return BrowserXhr;
+}());
+exports.BrowserXhr = BrowserXhr;
+
+},{"@angular/core":1}],80:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var interfaces_1 = require('../interfaces');
+var enums_1 = require('../enums');
+var static_response_1 = require('../static_response');
+var base_response_options_1 = require('../base_response_options');
+var core_1 = require('@angular/core');
+var browser_jsonp_1 = require('./browser_jsonp');
+var exceptions_1 = require('../../src/facade/exceptions');
+var lang_1 = require('../../src/facade/lang');
+var Observable_1 = require('rxjs/Observable');
+var JSONP_ERR_NO_CALLBACK = 'JSONP injected script did not invoke callback.';
+var JSONP_ERR_WRONG_METHOD = 'JSONP requests must use GET request method.';
+/**
+ * Abstract base class for an in-flight JSONP request.
+ */
+var JSONPConnection = (function () {
+    function JSONPConnection() {
+    }
+    return JSONPConnection;
+}());
+exports.JSONPConnection = JSONPConnection;
+var JSONPConnection_ = (function (_super) {
+    __extends(JSONPConnection_, _super);
+    function JSONPConnection_(req, _dom, baseResponseOptions) {
+        var _this = this;
+        _super.call(this);
+        this._dom = _dom;
+        this.baseResponseOptions = baseResponseOptions;
+        this._finished = false;
+        if (req.method !== enums_1.RequestMethod.Get) {
+            throw exceptions_1.makeTypeError(JSONP_ERR_WRONG_METHOD);
+        }
+        this.request = req;
+        this.response = new Observable_1.Observable(function (responseObserver) {
+            _this.readyState = enums_1.ReadyState.Loading;
+            var id = _this._id = _dom.nextRequestID();
+            _dom.exposeConnection(id, _this);
+            // Workaround Dart
+            // url = url.replace(/=JSONP_CALLBACK(&|$)/, `generated method`);
+            var callback = _dom.requestCallback(_this._id);
+            var url = req.url;
+            if (url.indexOf('=JSONP_CALLBACK&') > -1) {
+                url = lang_1.StringWrapper.replace(url, '=JSONP_CALLBACK&', "=" + callback + "&");
+            }
+            else if (url.lastIndexOf('=JSONP_CALLBACK') === url.length - '=JSONP_CALLBACK'.length) {
+                url = url.substring(0, url.length - '=JSONP_CALLBACK'.length) + ("=" + callback);
+            }
+            var script = _this._script = _dom.build(url);
+            var onLoad = function (event) {
+                if (_this.readyState === enums_1.ReadyState.Cancelled)
+                    return;
+                _this.readyState = enums_1.ReadyState.Done;
+                _dom.cleanup(script);
+                if (!_this._finished) {
+                    var responseOptions_1 = new base_response_options_1.ResponseOptions({ body: JSONP_ERR_NO_CALLBACK, type: enums_1.ResponseType.Error, url: url });
+                    if (lang_1.isPresent(baseResponseOptions)) {
+                        responseOptions_1 = baseResponseOptions.merge(responseOptions_1);
+                    }
+                    responseObserver.error(new static_response_1.Response(responseOptions_1));
+                    return;
+                }
+                var responseOptions = new base_response_options_1.ResponseOptions({ body: _this._responseData, url: url });
+                if (lang_1.isPresent(_this.baseResponseOptions)) {
+                    responseOptions = _this.baseResponseOptions.merge(responseOptions);
+                }
+                responseObserver.next(new static_response_1.Response(responseOptions));
+                responseObserver.complete();
+            };
+            var onError = function (error) {
+                if (_this.readyState === enums_1.ReadyState.Cancelled)
+                    return;
+                _this.readyState = enums_1.ReadyState.Done;
+                _dom.cleanup(script);
+                var responseOptions = new base_response_options_1.ResponseOptions({ body: error.message, type: enums_1.ResponseType.Error });
+                if (lang_1.isPresent(baseResponseOptions)) {
+                    responseOptions = baseResponseOptions.merge(responseOptions);
+                }
+                responseObserver.error(new static_response_1.Response(responseOptions));
+            };
+            script.addEventListener('load', onLoad);
+            script.addEventListener('error', onError);
+            _dom.send(script);
+            return function () {
+                _this.readyState = enums_1.ReadyState.Cancelled;
+                script.removeEventListener('load', onLoad);
+                script.removeEventListener('error', onError);
+                if (lang_1.isPresent(script)) {
+                    _this._dom.cleanup(script);
+                }
+            };
+        });
+    }
+    JSONPConnection_.prototype.finished = function (data) {
+        // Don't leak connections
+        this._finished = true;
+        this._dom.removeConnection(this._id);
+        if (this.readyState === enums_1.ReadyState.Cancelled)
+            return;
+        this._responseData = data;
+    };
+    return JSONPConnection_;
+}(JSONPConnection));
+exports.JSONPConnection_ = JSONPConnection_;
+/**
+ * A {@link ConnectionBackend} that uses the JSONP strategy of making requests.
+ */
+var JSONPBackend = (function (_super) {
+    __extends(JSONPBackend, _super);
+    function JSONPBackend() {
+        _super.apply(this, arguments);
+    }
+    return JSONPBackend;
+}(interfaces_1.ConnectionBackend));
+exports.JSONPBackend = JSONPBackend;
+var JSONPBackend_ = (function (_super) {
+    __extends(JSONPBackend_, _super);
+    function JSONPBackend_(_browserJSONP, _baseResponseOptions) {
+        _super.call(this);
+        this._browserJSONP = _browserJSONP;
+        this._baseResponseOptions = _baseResponseOptions;
+    }
+    JSONPBackend_.prototype.createConnection = function (request) {
+        return new JSONPConnection_(request, this._browserJSONP, this._baseResponseOptions);
+    };
+    JSONPBackend_.decorators = [
+        { type: core_1.Injectable },
+    ];
+    JSONPBackend_.ctorParameters = [
+        { type: browser_jsonp_1.BrowserJsonp, },
+        { type: base_response_options_1.ResponseOptions, },
+    ];
+    return JSONPBackend_;
+}(JSONPBackend));
+exports.JSONPBackend_ = JSONPBackend_;
+
+},{"../../src/facade/exceptions":88,"../../src/facade/lang":89,"../base_response_options":83,"../enums":84,"../interfaces":93,"../static_response":95,"./browser_jsonp":78,"@angular/core":1,"rxjs/Observable":97}],81:[function(require,module,exports){
+"use strict";
+var enums_1 = require('../enums');
+var static_response_1 = require('../static_response');
+var headers_1 = require('../headers');
+var base_response_options_1 = require('../base_response_options');
+var core_1 = require('@angular/core');
+var browser_xhr_1 = require('./browser_xhr');
+var lang_1 = require('../../src/facade/lang');
+var Observable_1 = require('rxjs/Observable');
+var http_utils_1 = require('../http_utils');
+/**
+* Creates connections using `XMLHttpRequest`. Given a fully-qualified
+* request, an `XHRConnection` will immediately create an `XMLHttpRequest` object and send the
+* request.
+*
+* This class would typically not be created or interacted with directly inside applications, though
+* the {@link MockConnection} may be interacted with in tests.
+*/
+var XHRConnection = (function () {
+    function XHRConnection(req, browserXHR, baseResponseOptions) {
+        var _this = this;
+        this.request = req;
+        this.response = new Observable_1.Observable(function (responseObserver) {
+            var _xhr = browserXHR.build();
+            _xhr.open(enums_1.RequestMethod[req.method].toUpperCase(), req.url);
+            // load event handler
+            var onLoad = function () {
+                // responseText is the old-school way of retrieving response (supported by IE8 & 9)
+                // response/responseType properties were introduced in XHR Level2 spec (supported by
+                // IE10)
+                var body = lang_1.isPresent(_xhr.response) ? _xhr.response : _xhr.responseText;
+                var headers = headers_1.Headers.fromResponseHeaderString(_xhr.getAllResponseHeaders());
+                var url = http_utils_1.getResponseURL(_xhr);
+                // normalize IE9 bug (http://bugs.jquery.com/ticket/1450)
+                var status = _xhr.status === 1223 ? 204 : _xhr.status;
+                // fix status code when it is 0 (0 status is undocumented).
+                // Occurs when accessing file resources or on Android 4.1 stock browser
+                // while retrieving files from application cache.
+                if (status === 0) {
+                    status = body ? 200 : 0;
+                }
+                var responseOptions = new base_response_options_1.ResponseOptions({ body: body, status: status, headers: headers, url: url });
+                if (lang_1.isPresent(baseResponseOptions)) {
+                    responseOptions = baseResponseOptions.merge(responseOptions);
+                }
+                var response = new static_response_1.Response(responseOptions);
+                if (http_utils_1.isSuccess(status)) {
+                    responseObserver.next(response);
+                    // TODO(gdi2290): defer complete if array buffer until done
+                    responseObserver.complete();
+                    return;
+                }
+                responseObserver.error(response);
+            };
+            // error event handler
+            var onError = function (err) {
+                var responseOptions = new base_response_options_1.ResponseOptions({ body: err, type: enums_1.ResponseType.Error });
+                if (lang_1.isPresent(baseResponseOptions)) {
+                    responseOptions = baseResponseOptions.merge(responseOptions);
+                }
+                responseObserver.error(new static_response_1.Response(responseOptions));
+            };
+            if (lang_1.isPresent(req.headers)) {
+                req.headers.forEach(function (values, name) { return _xhr.setRequestHeader(name, values.join(',')); });
+            }
+            _xhr.addEventListener('load', onLoad);
+            _xhr.addEventListener('error', onError);
+            _xhr.send(_this.request.text());
+            return function () {
+                _xhr.removeEventListener('load', onLoad);
+                _xhr.removeEventListener('error', onError);
+                _xhr.abort();
+            };
+        });
+    }
+    return XHRConnection;
+}());
+exports.XHRConnection = XHRConnection;
+var XHRBackend = (function () {
+    function XHRBackend(_browserXHR, _baseResponseOptions) {
+        this._browserXHR = _browserXHR;
+        this._baseResponseOptions = _baseResponseOptions;
+    }
+    XHRBackend.prototype.createConnection = function (request) {
+        return new XHRConnection(request, this._browserXHR, this._baseResponseOptions);
+    };
+    XHRBackend.decorators = [
+        { type: core_1.Injectable },
+    ];
+    XHRBackend.ctorParameters = [
+        { type: browser_xhr_1.BrowserXhr, },
+        { type: base_response_options_1.ResponseOptions, },
+    ];
+    return XHRBackend;
+}());
+exports.XHRBackend = XHRBackend;
+
+},{"../../src/facade/lang":89,"../base_response_options":83,"../enums":84,"../headers":90,"../http_utils":92,"../static_response":95,"./browser_xhr":79,"@angular/core":1,"rxjs/Observable":97}],82:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var lang_1 = require('../src/facade/lang');
+var headers_1 = require('./headers');
+var enums_1 = require('./enums');
+var core_1 = require('@angular/core');
+var url_search_params_1 = require('./url_search_params');
+var http_utils_1 = require('./http_utils');
+/**
+ * Creates a request options object to be optionally provided when instantiating a
+ * {@link Request}.
+ *
+ * This class is based on the `RequestInit` description in the [Fetch
+ * Spec](https://fetch.spec.whatwg.org/#requestinit).
+ *
+ * All values are null by default. Typical defaults can be found in the {@link BaseRequestOptions}
+ * class, which sub-classes `RequestOptions`.
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/7Wvi3lfLq41aQPKlxB4O?p=preview))
+ *
+ * ```typescript
+ * import {RequestOptions, Request, RequestMethod} from '@angular/http';
+ *
+ * var options = new RequestOptions({
+ *   method: RequestMethod.Post,
+ *   url: 'https://google.com'
+ * });
+ * var req = new Request(options);
+ * console.log('req.method:', RequestMethod[req.method]); // Post
+ * console.log('options.url:', options.url); // https://google.com
+ * ```
+ */
+var RequestOptions = (function () {
+    function RequestOptions(_a) {
+        var _b = _a === void 0 ? {} : _a, method = _b.method, headers = _b.headers, body = _b.body, url = _b.url, search = _b.search;
+        this.method = lang_1.isPresent(method) ? http_utils_1.normalizeMethodName(method) : null;
+        this.headers = lang_1.isPresent(headers) ? headers : null;
+        this.body = lang_1.isPresent(body) ? body : null;
+        this.url = lang_1.isPresent(url) ? url : null;
+        this.search = lang_1.isPresent(search) ? (lang_1.isString(search) ? new url_search_params_1.URLSearchParams((search)) :
+            (search)) :
+            null;
+    }
+    /**
+     * Creates a copy of the `RequestOptions` instance, using the optional input as values to override
+     * existing values. This method will not change the values of the instance on which it is being
+     * called.
+     *
+     * Note that `headers` and `search` will override existing values completely if present in
+     * the `options` object. If these values should be merged, it should be done prior to calling
+     * `merge` on the `RequestOptions` instance.
+     *
+     * ### Example ([live demo](http://plnkr.co/edit/6w8XA8YTkDRcPYpdB9dk?p=preview))
+     *
+     * ```typescript
+     * import {RequestOptions, Request, RequestMethod} from '@angular/http';
+     *
+     * var options = new RequestOptions({
+     *   method: RequestMethod.Post
+     * });
+     * var req = new Request(options.merge({
+     *   url: 'https://google.com'
+     * }));
+     * console.log('req.method:', RequestMethod[req.method]); // Post
+     * console.log('options.url:', options.url); // null
+     * console.log('req.url:', req.url); // https://google.com
+     * ```
+     */
+    RequestOptions.prototype.merge = function (options) {
+        return new RequestOptions({
+            method: lang_1.isPresent(options) && lang_1.isPresent(options.method) ? options.method : this.method,
+            headers: lang_1.isPresent(options) && lang_1.isPresent(options.headers) ? options.headers : this.headers,
+            body: lang_1.isPresent(options) && lang_1.isPresent(options.body) ? options.body : this.body,
+            url: lang_1.isPresent(options) && lang_1.isPresent(options.url) ? options.url : this.url,
+            search: lang_1.isPresent(options) && lang_1.isPresent(options.search) ?
+                (lang_1.isString(options.search) ? new url_search_params_1.URLSearchParams((options.search)) :
+                    (options.search).clone()) :
+                this.search
+        });
+    };
+    return RequestOptions;
+}());
+exports.RequestOptions = RequestOptions;
+var BaseRequestOptions = (function (_super) {
+    __extends(BaseRequestOptions, _super);
+    function BaseRequestOptions() {
+        _super.call(this, { method: enums_1.RequestMethod.Get, headers: new headers_1.Headers() });
+    }
+    BaseRequestOptions.decorators = [
+        { type: core_1.Injectable },
+    ];
+    BaseRequestOptions.ctorParameters = [];
+    return BaseRequestOptions;
+}(RequestOptions));
+exports.BaseRequestOptions = BaseRequestOptions;
+
+},{"../src/facade/lang":89,"./enums":84,"./headers":90,"./http_utils":92,"./url_search_params":96,"@angular/core":1}],83:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var core_1 = require('@angular/core');
+var lang_1 = require('../src/facade/lang');
+var headers_1 = require('./headers');
+var enums_1 = require('./enums');
+/**
+ * Creates a response options object to be optionally provided when instantiating a
+ * {@link Response}.
+ *
+ * This class is based on the `ResponseInit` description in the [Fetch
+ * Spec](https://fetch.spec.whatwg.org/#responseinit).
+ *
+ * All values are null by default. Typical defaults can be found in the
+ * {@link BaseResponseOptions} class, which sub-classes `ResponseOptions`.
+ *
+ * This class may be used in tests to build {@link Response Responses} for
+ * mock responses (see {@link MockBackend}).
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/P9Jkk8e8cz6NVzbcxEsD?p=preview))
+ *
+ * ```typescript
+ * import {ResponseOptions, Response} from '@angular/http';
+ *
+ * var options = new ResponseOptions({
+ *   body: '{"name":"Jeff"}'
+ * });
+ * var res = new Response(options);
+ *
+ * console.log('res.json():', res.json()); // Object {name: "Jeff"}
+ * ```
+ */
+var ResponseOptions = (function () {
+    function ResponseOptions(_a) {
+        var _b = _a === void 0 ? {} : _a, body = _b.body, status = _b.status, headers = _b.headers, statusText = _b.statusText, type = _b.type, url = _b.url;
+        this.body = lang_1.isPresent(body) ? body : null;
+        this.status = lang_1.isPresent(status) ? status : null;
+        this.headers = lang_1.isPresent(headers) ? headers : null;
+        this.statusText = lang_1.isPresent(statusText) ? statusText : null;
+        this.type = lang_1.isPresent(type) ? type : null;
+        this.url = lang_1.isPresent(url) ? url : null;
+    }
+    /**
+     * Creates a copy of the `ResponseOptions` instance, using the optional input as values to
+     * override
+     * existing values. This method will not change the values of the instance on which it is being
+     * called.
+     *
+     * This may be useful when sharing a base `ResponseOptions` object inside tests,
+     * where certain properties may change from test to test.
+     *
+     * ### Example ([live demo](http://plnkr.co/edit/1lXquqFfgduTFBWjNoRE?p=preview))
+     *
+     * ```typescript
+     * import {ResponseOptions, Response} from '@angular/http';
+     *
+     * var options = new ResponseOptions({
+     *   body: {name: 'Jeff'}
+     * });
+     * var res = new Response(options.merge({
+     *   url: 'https://google.com'
+     * }));
+     * console.log('options.url:', options.url); // null
+     * console.log('res.json():', res.json()); // Object {name: "Jeff"}
+     * console.log('res.url:', res.url); // https://google.com
+     * ```
+     */
+    ResponseOptions.prototype.merge = function (options) {
+        return new ResponseOptions({
+            body: lang_1.isPresent(options) && lang_1.isPresent(options.body) ? options.body : this.body,
+            status: lang_1.isPresent(options) && lang_1.isPresent(options.status) ? options.status : this.status,
+            headers: lang_1.isPresent(options) && lang_1.isPresent(options.headers) ? options.headers : this.headers,
+            statusText: lang_1.isPresent(options) && lang_1.isPresent(options.statusText) ? options.statusText :
+                this.statusText,
+            type: lang_1.isPresent(options) && lang_1.isPresent(options.type) ? options.type : this.type,
+            url: lang_1.isPresent(options) && lang_1.isPresent(options.url) ? options.url : this.url,
+        });
+    };
+    return ResponseOptions;
+}());
+exports.ResponseOptions = ResponseOptions;
+var BaseResponseOptions = (function (_super) {
+    __extends(BaseResponseOptions, _super);
+    function BaseResponseOptions() {
+        _super.call(this, { status: 200, statusText: 'Ok', type: enums_1.ResponseType.Default, headers: new headers_1.Headers() });
+    }
+    BaseResponseOptions.decorators = [
+        { type: core_1.Injectable },
+    ];
+    BaseResponseOptions.ctorParameters = [];
+    return BaseResponseOptions;
+}(ResponseOptions));
+exports.BaseResponseOptions = BaseResponseOptions;
+
+},{"../src/facade/lang":89,"./enums":84,"./headers":90,"@angular/core":1}],84:[function(require,module,exports){
+"use strict";
+/**
+* Supported http methods.
+*/
+(function (RequestMethod) {
+    RequestMethod[RequestMethod["Get"] = 0] = "Get";
+    RequestMethod[RequestMethod["Post"] = 1] = "Post";
+    RequestMethod[RequestMethod["Put"] = 2] = "Put";
+    RequestMethod[RequestMethod["Delete"] = 3] = "Delete";
+    RequestMethod[RequestMethod["Options"] = 4] = "Options";
+    RequestMethod[RequestMethod["Head"] = 5] = "Head";
+    RequestMethod[RequestMethod["Patch"] = 6] = "Patch";
+})(exports.RequestMethod || (exports.RequestMethod = {}));
+var RequestMethod = exports.RequestMethod;
+/**
+ * All possible states in which a connection can be, based on
+ * [States](http://www.w3.org/TR/XMLHttpRequest/#states) from the `XMLHttpRequest` spec, but with an
+ * additional "CANCELLED" state.
+ */
+(function (ReadyState) {
+    ReadyState[ReadyState["Unsent"] = 0] = "Unsent";
+    ReadyState[ReadyState["Open"] = 1] = "Open";
+    ReadyState[ReadyState["HeadersReceived"] = 2] = "HeadersReceived";
+    ReadyState[ReadyState["Loading"] = 3] = "Loading";
+    ReadyState[ReadyState["Done"] = 4] = "Done";
+    ReadyState[ReadyState["Cancelled"] = 5] = "Cancelled";
+})(exports.ReadyState || (exports.ReadyState = {}));
+var ReadyState = exports.ReadyState;
+/**
+ * Acceptable response types to be associated with a {@link Response}, based on
+ * [ResponseType](https://fetch.spec.whatwg.org/#responsetype) from the Fetch spec.
+ */
+(function (ResponseType) {
+    ResponseType[ResponseType["Basic"] = 0] = "Basic";
+    ResponseType[ResponseType["Cors"] = 1] = "Cors";
+    ResponseType[ResponseType["Default"] = 2] = "Default";
+    ResponseType[ResponseType["Error"] = 3] = "Error";
+    ResponseType[ResponseType["Opaque"] = 4] = "Opaque";
+})(exports.ResponseType || (exports.ResponseType = {}));
+var ResponseType = exports.ResponseType;
+
+},{}],85:[function(require,module,exports){
+arguments[4][31][0].apply(exports,arguments)
+},{"dup":31}],86:[function(require,module,exports){
+arguments[4][32][0].apply(exports,arguments)
+},{"./lang":89,"dup":32}],87:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"./base_wrapped_exception":85,"./collection":86,"./lang":89,"dup":33}],88:[function(require,module,exports){
+arguments[4][34][0].apply(exports,arguments)
+},{"./base_wrapped_exception":85,"./exception_handler":87,"dup":34}],89:[function(require,module,exports){
+arguments[4][35][0].apply(exports,arguments)
+},{"dup":35}],90:[function(require,module,exports){
+"use strict";
+var lang_1 = require('../src/facade/lang');
+var exceptions_1 = require('../src/facade/exceptions');
+var collection_1 = require('../src/facade/collection');
+/**
+ * Polyfill for [Headers](https://developer.mozilla.org/en-US/docs/Web/API/Headers/Headers), as
+ * specified in the [Fetch Spec](https://fetch.spec.whatwg.org/#headers-class).
+ *
+ * The only known difference between this `Headers` implementation and the spec is the
+ * lack of an `entries` method.
+ *
+ * ### Example ([live demo](http://plnkr.co/edit/MTdwT6?p=preview))
+ *
+ * ```
+ * import {Headers} from '@angular/http';
+ *
+ * var firstHeaders = new Headers();
+ * firstHeaders.append('Content-Type', 'image/jpeg');
+ * console.log(firstHeaders.get('Content-Type')) //'image/jpeg'
+ *
+ * // Create headers from Plain Old JavaScript Object
+ * var secondHeaders = new Headers({
+ *   'X-My-Custom-Header': 'Angular'
+ * });
+ * console.log(secondHeaders.get('X-My-Custom-Header')); //'Angular'
+ *
+ * var thirdHeaders = new Headers(secondHeaders);
+ * console.log(thirdHeaders.get('X-My-Custom-Header')); //'Angular'
+ * ```
+ */
+var Headers = (function () {
+    function Headers(headers) {
+        var _this = this;
+        if (headers instanceof Headers) {
+            this._headersMap = headers._headersMap;
+            return;
+        }
+        this._headersMap = new collection_1.Map();
+        if (lang_1.isBlank(headers)) {
+            return;
+        }
+        // headers instanceof StringMap
+        collection_1.StringMapWrapper.forEach(headers, function (v, k) {
+            _this._headersMap.set(k, collection_1.isListLikeIterable(v) ? v : [v]);
+        });
+    }
+    /**
+     * Returns a new Headers instance from the given DOMString of Response Headers
+     */
+    Headers.fromResponseHeaderString = function (headersString) {
+        return headersString.trim()
+            .split('\n')
+            .map(function (val) { return val.split(':'); })
+            .map(function (_a) {
+            var key = _a[0], parts = _a.slice(1);
+            return ([key.trim(), parts.join(':').trim()]);
+        })
+            .reduce(function (headers, _a) {
+            var key = _a[0], value = _a[1];
+            return !headers.set(key, value) && headers;
+        }, new Headers());
+    };
+    /**
+     * Appends a header to existing list of header values for a given header name.
+     */
+    Headers.prototype.append = function (name, value) {
+        var mapName = this._headersMap.get(name);
+        var list = collection_1.isListLikeIterable(mapName) ? mapName : [];
+        list.push(value);
+        this._headersMap.set(name, list);
+    };
+    /**
+     * Deletes all header values for the given name.
+     */
+    Headers.prototype.delete = function (name) { this._headersMap.delete(name); };
+    Headers.prototype.forEach = function (fn) {
+        this._headersMap.forEach(fn);
+    };
+    /**
+     * Returns first header that matches given name.
+     */
+    Headers.prototype.get = function (header) { return collection_1.ListWrapper.first(this._headersMap.get(header)); };
+    /**
+     * Check for existence of header by given name.
+     */
+    Headers.prototype.has = function (header) { return this._headersMap.has(header); };
+    /**
+     * Provides names of set headers
+     */
+    Headers.prototype.keys = function () { return collection_1.MapWrapper.keys(this._headersMap); };
+    /**
+     * Sets or overrides header value for given name.
+     */
+    Headers.prototype.set = function (header, value) {
+        var list = [];
+        if (collection_1.isListLikeIterable(value)) {
+            var pushValue = value.join(',');
+            list.push(pushValue);
+        }
+        else {
+            list.push(value);
+        }
+        this._headersMap.set(header, list);
+    };
+    /**
+     * Returns values of all headers.
+     */
+    Headers.prototype.values = function () { return collection_1.MapWrapper.values(this._headersMap); };
+    /**
+     * Returns string of all headers.
+     */
+    Headers.prototype.toJSON = function () {
+        var serializableHeaders = {};
+        this._headersMap.forEach(function (values, name) {
+            var list = [];
+            collection_1.iterateListLike(values, function (val) { return list = collection_1.ListWrapper.concat(list, val.split(',')); });
+            serializableHeaders[name] = list;
+        });
+        return serializableHeaders;
+    };
+    /**
+     * Returns list of header values for a given name.
+     */
+    Headers.prototype.getAll = function (header) {
+        var headers = this._headersMap.get(header);
+        return collection_1.isListLikeIterable(headers) ? headers : [];
+    };
+    /**
+     * This method is not implemented.
+     */
+    Headers.prototype.entries = function () { throw new exceptions_1.BaseException('"entries" method is not implemented on Headers class'); };
+    return Headers;
+}());
+exports.Headers = Headers;
+
+},{"../src/facade/collection":86,"../src/facade/exceptions":88,"../src/facade/lang":89}],91:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var lang_1 = require('../src/facade/lang');
+var exceptions_1 = require('../src/facade/exceptions');
+var core_1 = require('@angular/core');
+var interfaces_1 = require('./interfaces');
+var static_request_1 = require('./static_request');
+var base_request_options_1 = require('./base_request_options');
+var enums_1 = require('./enums');
+function httpRequest(backend, request) {
+    return backend.createConnection(request).response;
+}
+function mergeOptions(defaultOpts, providedOpts, method, url) {
+    var newOptions = defaultOpts;
+    if (lang_1.isPresent(providedOpts)) {
+        // Hack so Dart can used named parameters
+        return newOptions.merge(new base_request_options_1.RequestOptions({
+            method: providedOpts.method || method,
+            url: providedOpts.url || url,
+            search: providedOpts.search,
+            headers: providedOpts.headers,
+            body: providedOpts.body
+        }));
+    }
+    if (lang_1.isPresent(method)) {
+        return newOptions.merge(new base_request_options_1.RequestOptions({ method: method, url: url }));
+    }
+    else {
+        return newOptions.merge(new base_request_options_1.RequestOptions({ url: url }));
+    }
+}
+var Http = (function () {
+    function Http(_backend, _defaultOptions) {
+        this._backend = _backend;
+        this._defaultOptions = _defaultOptions;
+    }
+    /**
+     * Performs any type of http request. First argument is required, and can either be a url or
+     * a {@link Request} instance. If the first argument is a url, an optional {@link RequestOptions}
+     * object can be provided as the 2nd argument. The options object will be merged with the values
+     * of {@link BaseRequestOptions} before performing the request.
+     */
+    Http.prototype.request = function (url, options) {
+        var responseObservable;
+        if (lang_1.isString(url)) {
+            responseObservable = httpRequest(this._backend, new static_request_1.Request(mergeOptions(this._defaultOptions, options, enums_1.RequestMethod.Get, url)));
+        }
+        else if (url instanceof static_request_1.Request) {
+            responseObservable = httpRequest(this._backend, url);
+        }
+        else {
+            throw exceptions_1.makeTypeError('First argument must be a url string or Request instance.');
+        }
+        return responseObservable;
+    };
+    /**
+     * Performs a request with `get` http method.
+     */
+    Http.prototype.get = function (url, options) {
+        return httpRequest(this._backend, new static_request_1.Request(mergeOptions(this._defaultOptions, options, enums_1.RequestMethod.Get, url)));
+    };
+    /**
+     * Performs a request with `post` http method.
+     */
+    Http.prototype.post = function (url, body, options) {
+        return httpRequest(this._backend, new static_request_1.Request(mergeOptions(this._defaultOptions.merge(new base_request_options_1.RequestOptions({ body: body })), options, enums_1.RequestMethod.Post, url)));
+    };
+    /**
+     * Performs a request with `put` http method.
+     */
+    Http.prototype.put = function (url, body, options) {
+        return httpRequest(this._backend, new static_request_1.Request(mergeOptions(this._defaultOptions.merge(new base_request_options_1.RequestOptions({ body: body })), options, enums_1.RequestMethod.Put, url)));
+    };
+    /**
+     * Performs a request with `delete` http method.
+     */
+    Http.prototype.delete = function (url, options) {
+        return httpRequest(this._backend, new static_request_1.Request(mergeOptions(this._defaultOptions, options, enums_1.RequestMethod.Delete, url)));
+    };
+    /**
+     * Performs a request with `patch` http method.
+     */
+    Http.prototype.patch = function (url, body, options) {
+        return httpRequest(this._backend, new static_request_1.Request(mergeOptions(this._defaultOptions.merge(new base_request_options_1.RequestOptions({ body: body })), options, enums_1.RequestMethod.Patch, url)));
+    };
+    /**
+     * Performs a request with `head` http method.
+     */
+    Http.prototype.head = function (url, options) {
+        return httpRequest(this._backend, new static_request_1.Request(mergeOptions(this._defaultOptions, options, enums_1.RequestMethod.Head, url)));
+    };
+    Http.decorators = [
+        { type: core_1.Injectable },
+    ];
+    Http.ctorParameters = [
+        { type: interfaces_1.ConnectionBackend, },
+        { type: base_request_options_1.RequestOptions, },
+    ];
+    return Http;
+}());
+exports.Http = Http;
+var Jsonp = (function (_super) {
+    __extends(Jsonp, _super);
+    function Jsonp(backend, defaultOptions) {
+        _super.call(this, backend, defaultOptions);
+    }
+    /**
+     * Performs any type of http request. First argument is required, and can either be a url or
+     * a {@link Request} instance. If the first argument is a url, an optional {@link RequestOptions}
+     * object can be provided as the 2nd argument. The options object will be merged with the values
+     * of {@link BaseRequestOptions} before performing the request.
+     */
+    Jsonp.prototype.request = function (url, options) {
+        var responseObservable;
+        if (lang_1.isString(url)) {
+            url =
+                new static_request_1.Request(mergeOptions(this._defaultOptions, options, enums_1.RequestMethod.Get, url));
+        }
+        if (url instanceof static_request_1.Request) {
+            if (url.method !== enums_1.RequestMethod.Get) {
+                exceptions_1.makeTypeError('JSONP requests must use GET request method.');
+            }
+            responseObservable = httpRequest(this._backend, url);
+        }
+        else {
+            throw exceptions_1.makeTypeError('First argument must be a url string or Request instance.');
+        }
+        return responseObservable;
+    };
+    Jsonp.decorators = [
+        { type: core_1.Injectable },
+    ];
+    Jsonp.ctorParameters = [
+        { type: interfaces_1.ConnectionBackend, },
+        { type: base_request_options_1.RequestOptions, },
+    ];
+    return Jsonp;
+}(Http));
+exports.Jsonp = Jsonp;
+
+},{"../src/facade/exceptions":88,"../src/facade/lang":89,"./base_request_options":82,"./enums":84,"./interfaces":93,"./static_request":94,"@angular/core":1}],92:[function(require,module,exports){
+"use strict";
+var lang_1 = require('../src/facade/lang');
+var enums_1 = require('./enums');
+var exceptions_1 = require('../src/facade/exceptions');
+function normalizeMethodName(method) {
+    if (lang_1.isString(method)) {
+        var originalMethod = method;
+        method = method
+            .replace(/(\w)(\w*)/g, function (g0, g1, g2) {
+            return g1.toUpperCase() + g2.toLowerCase();
+        });
+        method = enums_1.RequestMethod[method];
+        if (typeof method !== 'number')
+            throw exceptions_1.makeTypeError("Invalid request method. The method \"" + originalMethod + "\" is not supported.");
+    }
+    return method;
+}
+exports.normalizeMethodName = normalizeMethodName;
+exports.isSuccess = function (status) { return (status >= 200 && status < 300); };
+function getResponseURL(xhr) {
+    if ('responseURL' in xhr) {
+        return xhr.responseURL;
+    }
+    if (/^X-Request-URL:/m.test(xhr.getAllResponseHeaders())) {
+        return xhr.getResponseHeader('X-Request-URL');
+    }
+    return;
+}
+exports.getResponseURL = getResponseURL;
+var lang_2 = require('../src/facade/lang');
+exports.isJsObject = lang_2.isJsObject;
+
+},{"../src/facade/exceptions":88,"../src/facade/lang":89,"./enums":84}],93:[function(require,module,exports){
+"use strict";
+/**
+ * Abstract class from which real backends are derived.
+ *
+ * The primary purpose of a `ConnectionBackend` is to create new connections to fulfill a given
+ * {@link Request}.
+ */
+var ConnectionBackend = (function () {
+    function ConnectionBackend() {
+    }
+    return ConnectionBackend;
+}());
+exports.ConnectionBackend = ConnectionBackend;
+/**
+ * Abstract class from which real connections are derived.
+ */
+var Connection = (function () {
+    function Connection() {
+    }
+    return Connection;
+}());
+exports.Connection = Connection;
+
+},{}],94:[function(require,module,exports){
+"use strict";
+var headers_1 = require('./headers');
+var http_utils_1 = require('./http_utils');
+var lang_1 = require('../src/facade/lang');
+// TODO(jeffbcross): properly implement body accessors
+/**
+ * Creates `Request` instances from provided values.
+ *
+ * The Request's interface is inspired by the Request constructor defined in the [Fetch
+ * Spec](https://fetch.spec.whatwg.org/#request-class),
+ * but is considered a static value whose body can be accessed many times. There are other
+ * differences in the implementation, but this is the most significant.
+ *
+ * `Request` instances are typically created by higher-level classes, like {@link Http} and
+ * {@link Jsonp}, but it may occasionally be useful to explicitly create `Request` instances.
+ * One such example is when creating services that wrap higher-level services, like {@link Http},
+ * where it may be useful to generate a `Request` with arbitrary headers and search params.
+ *
+ * ```typescript
+ * import {Injectable, Injector} from '@angular/core';
+ * import {HTTP_PROVIDERS, Http, Request, RequestMethod} from '@angular/http';
+ *
+ * @Injectable()
+ * class AutoAuthenticator {
+ *   constructor(public http:Http) {}
+ *   request(url:string) {
+ *     return this.http.request(new Request({
+ *       method: RequestMethod.Get,
+ *       url: url,
+ *       search: 'password=123'
+ *     }));
+ *   }
+ * }
+ *
+ * var injector = Injector.resolveAndCreate([HTTP_PROVIDERS, AutoAuthenticator]);
+ * var authenticator = injector.get(AutoAuthenticator);
+ * authenticator.request('people.json').subscribe(res => {
+ *   //URL should have included '?password=123'
+ *   console.log('people', res.json());
+ * });
+ * ```
+ */
+var Request = (function () {
+    function Request(requestOptions) {
+        // TODO: assert that url is present
+        var url = requestOptions.url;
+        this.url = requestOptions.url;
+        if (lang_1.isPresent(requestOptions.search)) {
+            var search = requestOptions.search.toString();
+            if (search.length > 0) {
+                var prefix = '?';
+                if (lang_1.StringWrapper.contains(this.url, '?')) {
+                    prefix = (this.url[this.url.length - 1] == '&') ? '' : '&';
+                }
+                // TODO: just delete search-query-looking string in url?
+                this.url = url + prefix + search;
+            }
+        }
+        this._body = requestOptions.body;
+        this.method = http_utils_1.normalizeMethodName(requestOptions.method);
+        // TODO(jeffbcross): implement behavior
+        // Defaults to 'omit', consistent with browser
+        // TODO(jeffbcross): implement behavior
+        this.headers = new headers_1.Headers(requestOptions.headers);
+    }
+    /**
+     * Returns the request's body as string, assuming that body exists. If body is undefined, return
+     * empty
+     * string.
+     */
+    Request.prototype.text = function () { return lang_1.isPresent(this._body) ? this._body.toString() : ''; };
+    return Request;
+}());
+exports.Request = Request;
+
+},{"../src/facade/lang":89,"./headers":90,"./http_utils":92}],95:[function(require,module,exports){
+"use strict";
+var lang_1 = require('../src/facade/lang');
+var exceptions_1 = require('../src/facade/exceptions');
+var http_utils_1 = require('./http_utils');
+/**
+ * Creates `Response` instances from provided values.
+ *
+ * Though this object isn't
+ * usually instantiated by end-users, it is the primary object interacted with when it comes time to
+ * add data to a view.
+ *
+ * ### Example
+ *
+ * ```
+ * http.request('my-friends.txt').subscribe(response => this.friends = response.text());
+ * ```
+ *
+ * The Response's interface is inspired by the Response constructor defined in the [Fetch
+ * Spec](https://fetch.spec.whatwg.org/#response-class), but is considered a static value whose body
+ * can be accessed many times. There are other differences in the implementation, but this is the
+ * most significant.
+ */
+var Response = (function () {
+    function Response(responseOptions) {
+        this._body = responseOptions.body;
+        this.status = responseOptions.status;
+        this.ok = (this.status >= 200 && this.status <= 299);
+        this.statusText = responseOptions.statusText;
+        this.headers = responseOptions.headers;
+        this.type = responseOptions.type;
+        this.url = responseOptions.url;
+    }
+    /**
+     * Not yet implemented
+     */
+    // TODO: Blob return type
+    Response.prototype.blob = function () { throw new exceptions_1.BaseException('"blob()" method not implemented on Response superclass'); };
+    /**
+     * Attempts to return body as parsed `JSON` object, or raises an exception.
+     */
+    Response.prototype.json = function () {
+        var jsonResponse;
+        if (http_utils_1.isJsObject(this._body)) {
+            jsonResponse = this._body;
+        }
+        else if (lang_1.isString(this._body)) {
+            jsonResponse = lang_1.Json.parse(this._body);
+        }
+        return jsonResponse;
+    };
+    /**
+     * Returns the body as a string, presuming `toString()` can be called on the response body.
+     */
+    Response.prototype.text = function () { return this._body.toString(); };
+    /**
+     * Not yet implemented
+     */
+    // TODO: ArrayBuffer return type
+    Response.prototype.arrayBuffer = function () {
+        throw new exceptions_1.BaseException('"arrayBuffer()" method not implemented on Response superclass');
+    };
+    return Response;
+}());
+exports.Response = Response;
+
+},{"../src/facade/exceptions":88,"../src/facade/lang":89,"./http_utils":92}],96:[function(require,module,exports){
+"use strict";
+var lang_1 = require('../src/facade/lang');
+var collection_1 = require('../src/facade/collection');
+function paramParser(rawParams) {
+    if (rawParams === void 0) { rawParams = ''; }
+    var map = new collection_1.Map();
+    if (rawParams.length > 0) {
+        var params = rawParams.split('&');
+        params.forEach(function (param) {
+            var split = param.split('=');
+            var key = split[0];
+            var val = split[1];
+            var list = lang_1.isPresent(map.get(key)) ? map.get(key) : [];
+            list.push(val);
+            map.set(key, list);
+        });
+    }
+    return map;
+}
+/**
+ * Map-like representation of url search parameters, based on
+ * [URLSearchParams](https://url.spec.whatwg.org/#urlsearchparams) in the url living standard,
+ * with several extensions for merging URLSearchParams objects:
+ *   - setAll()
+ *   - appendAll()
+ *   - replaceAll()
+ */
+var URLSearchParams = (function () {
+    function URLSearchParams(rawParams) {
+        if (rawParams === void 0) { rawParams = ''; }
+        this.rawParams = rawParams;
+        this.paramsMap = paramParser(rawParams);
+    }
+    URLSearchParams.prototype.clone = function () {
+        var clone = new URLSearchParams();
+        clone.appendAll(this);
+        return clone;
+    };
+    URLSearchParams.prototype.has = function (param) { return this.paramsMap.has(param); };
+    URLSearchParams.prototype.get = function (param) {
+        var storedParam = this.paramsMap.get(param);
+        if (collection_1.isListLikeIterable(storedParam)) {
+            return collection_1.ListWrapper.first(storedParam);
+        }
+        else {
+            return null;
+        }
+    };
+    URLSearchParams.prototype.getAll = function (param) {
+        var mapParam = this.paramsMap.get(param);
+        return lang_1.isPresent(mapParam) ? mapParam : [];
+    };
+    URLSearchParams.prototype.set = function (param, val) {
+        var mapParam = this.paramsMap.get(param);
+        var list = lang_1.isPresent(mapParam) ? mapParam : [];
+        collection_1.ListWrapper.clear(list);
+        list.push(val);
+        this.paramsMap.set(param, list);
+    };
+    // A merge operation
+    // For each name-values pair in `searchParams`, perform `set(name, values[0])`
+    //
+    // E.g: "a=[1,2,3], c=[8]" + "a=[4,5,6], b=[7]" = "a=[4], c=[8], b=[7]"
+    //
+    // TODO(@caitp): document this better
+    URLSearchParams.prototype.setAll = function (searchParams) {
+        var _this = this;
+        searchParams.paramsMap.forEach(function (value, param) {
+            var mapParam = _this.paramsMap.get(param);
+            var list = lang_1.isPresent(mapParam) ? mapParam : [];
+            collection_1.ListWrapper.clear(list);
+            list.push(value[0]);
+            _this.paramsMap.set(param, list);
+        });
+    };
+    URLSearchParams.prototype.append = function (param, val) {
+        var mapParam = this.paramsMap.get(param);
+        var list = lang_1.isPresent(mapParam) ? mapParam : [];
+        list.push(val);
+        this.paramsMap.set(param, list);
+    };
+    // A merge operation
+    // For each name-values pair in `searchParams`, perform `append(name, value)`
+    // for each value in `values`.
+    //
+    // E.g: "a=[1,2], c=[8]" + "a=[3,4], b=[7]" = "a=[1,2,3,4], c=[8], b=[7]"
+    //
+    // TODO(@caitp): document this better
+    URLSearchParams.prototype.appendAll = function (searchParams) {
+        var _this = this;
+        searchParams.paramsMap.forEach(function (value, param) {
+            var mapParam = _this.paramsMap.get(param);
+            var list = lang_1.isPresent(mapParam) ? mapParam : [];
+            for (var i = 0; i < value.length; ++i) {
+                list.push(value[i]);
+            }
+            _this.paramsMap.set(param, list);
+        });
+    };
+    // A merge operation
+    // For each name-values pair in `searchParams`, perform `delete(name)`,
+    // followed by `set(name, values)`
+    //
+    // E.g: "a=[1,2,3], c=[8]" + "a=[4,5,6], b=[7]" = "a=[4,5,6], c=[8], b=[7]"
+    //
+    // TODO(@caitp): document this better
+    URLSearchParams.prototype.replaceAll = function (searchParams) {
+        var _this = this;
+        searchParams.paramsMap.forEach(function (value, param) {
+            var mapParam = _this.paramsMap.get(param);
+            var list = lang_1.isPresent(mapParam) ? mapParam : [];
+            collection_1.ListWrapper.clear(list);
+            for (var i = 0; i < value.length; ++i) {
+                list.push(value[i]);
+            }
+            _this.paramsMap.set(param, list);
+        });
+    };
+    URLSearchParams.prototype.toString = function () {
+        var paramsList = [];
+        this.paramsMap.forEach(function (values, k) { values.forEach(function (v) { return paramsList.push(k + '=' + v); }); });
+        return paramsList.join('&');
+    };
+    URLSearchParams.prototype.delete = function (param) { this.paramsMap.delete(param); };
+    return URLSearchParams;
+}());
+exports.URLSearchParams = URLSearchParams;
+
+},{"../src/facade/collection":86,"../src/facade/lang":89}],97:[function(require,module,exports){
+"use strict";
 var root_1 = require('./util/root');
 var observable_1 = require('./symbol/observable');
 var toSubscriber_1 = require('./util/toSubscriber');
@@ -11695,7 +13177,7 @@ var Observable = (function () {
 }());
 exports.Observable = Observable;
 
-},{"./symbol/observable":84,"./util/root":92,"./util/toSubscriber":94}],77:[function(require,module,exports){
+},{"./symbol/observable":109,"./util/root":117,"./util/toSubscriber":119}],98:[function(require,module,exports){
 "use strict";
 exports.empty = {
     isUnsubscribed: true,
@@ -11704,7 +13186,7 @@ exports.empty = {
     complete: function () { }
 };
 
-},{}],78:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -11911,7 +13393,7 @@ var SubjectObservable = (function (_super) {
     return SubjectObservable;
 }(Observable_1.Observable));
 
-},{"./Observable":76,"./SubjectSubscription":79,"./Subscriber":80,"./Subscription":81,"./symbol/rxSubscriber":85,"./util/ObjectUnsubscribedError":86,"./util/throwError":93}],79:[function(require,module,exports){
+},{"./Observable":97,"./SubjectSubscription":100,"./Subscriber":101,"./Subscription":102,"./symbol/rxSubscriber":110,"./util/ObjectUnsubscribedError":111,"./util/throwError":118}],100:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -11952,7 +13434,7 @@ var SubjectSubscription = (function (_super) {
 }(Subscription_1.Subscription));
 exports.SubjectSubscription = SubjectSubscription;
 
-},{"./Subscription":81}],80:[function(require,module,exports){
+},{"./Subscription":102}],101:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -12204,7 +13686,7 @@ var SafeSubscriber = (function (_super) {
     return SafeSubscriber;
 }(Subscriber));
 
-},{"./Observer":77,"./Subscription":81,"./symbol/rxSubscriber":85,"./util/isFunction":90}],81:[function(require,module,exports){
+},{"./Observer":98,"./Subscription":102,"./symbol/rxSubscriber":110,"./util/isFunction":115}],102:[function(require,module,exports){
 "use strict";
 var isArray_1 = require('./util/isArray');
 var isObject_1 = require('./util/isObject');
@@ -12355,7 +13837,19 @@ var Subscription = (function () {
 }());
 exports.Subscription = Subscription;
 
-},{"./util/UnsubscriptionError":87,"./util/errorObject":88,"./util/isArray":89,"./util/isFunction":90,"./util/isObject":91,"./util/tryCatch":95}],82:[function(require,module,exports){
+},{"./util/UnsubscriptionError":112,"./util/errorObject":113,"./util/isArray":114,"./util/isFunction":115,"./util/isObject":116,"./util/tryCatch":120}],103:[function(require,module,exports){
+"use strict";
+var Observable_1 = require('../../Observable');
+var catch_1 = require('../../operator/catch');
+Observable_1.Observable.prototype.catch = catch_1._catch;
+
+},{"../../Observable":97,"../../operator/catch":106}],104:[function(require,module,exports){
+"use strict";
+var Observable_1 = require('../../Observable');
+var map_1 = require('../../operator/map');
+Observable_1.Observable.prototype.map = map_1.map;
+
+},{"../../Observable":97,"../../operator/map":107}],105:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -12461,7 +13955,162 @@ function dispatchError(arg) {
     }
 }
 
-},{"../Observable":76,"../util/root":92}],83:[function(require,module,exports){
+},{"../Observable":97,"../util/root":117}],106:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Subscriber_1 = require('../Subscriber');
+/**
+ * Catches errors on the observable to be handled by returning a new observable or throwing an error.
+ * @param {function} selector a function that takes as arguments `err`, which is the error, and `caught`, which
+ *  is the source observable, in case you'd like to "retry" that observable by returning it again. Whatever observable
+ *  is returned by the `selector` will be used to continue the observable chain.
+ * @return {Observable} an observable that originates from either the source or the observable returned by the
+ *  catch `selector` function.
+ * @method catch
+ * @owner Observable
+ */
+function _catch(selector) {
+    var operator = new CatchOperator(selector);
+    var caught = this.lift(operator);
+    return (operator.caught = caught);
+}
+exports._catch = _catch;
+var CatchOperator = (function () {
+    function CatchOperator(selector) {
+        this.selector = selector;
+    }
+    CatchOperator.prototype.call = function (subscriber, source) {
+        return source._subscribe(new CatchSubscriber(subscriber, this.selector, this.caught));
+    };
+    return CatchOperator;
+}());
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+var CatchSubscriber = (function (_super) {
+    __extends(CatchSubscriber, _super);
+    function CatchSubscriber(destination, selector, caught) {
+        _super.call(this, destination);
+        this.selector = selector;
+        this.caught = caught;
+    }
+    // NOTE: overriding `error` instead of `_error` because we don't want
+    // to have this flag this subscriber as `isStopped`.
+    CatchSubscriber.prototype.error = function (err) {
+        if (!this.isStopped) {
+            var result = void 0;
+            try {
+                result = this.selector(err, this.caught);
+            }
+            catch (err) {
+                this.destination.error(err);
+                return;
+            }
+            this._innerSub(result);
+        }
+    };
+    CatchSubscriber.prototype._innerSub = function (result) {
+        this.unsubscribe();
+        this.destination.remove(this);
+        result.subscribe(this.destination);
+    };
+    return CatchSubscriber;
+}(Subscriber_1.Subscriber));
+
+},{"../Subscriber":101}],107:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var Subscriber_1 = require('../Subscriber');
+/**
+ * Applies a given `project` function to each value emitted by the source
+ * Observable, and emits the resulting values as an Observable.
+ *
+ * <span class="informal">Like [Array.prototype.map()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map),
+ * it passes each source value through a transformation function to get
+ * corresponding output values.</span>
+ *
+ * <img src="./img/map.png" width="100%">
+ *
+ * Similar to the well known `Array.prototype.map` function, this operator
+ * applies a projection to each value and emits that projection in the output
+ * Observable.
+ *
+ * @example <caption>Map every every click to the clientX position of that click</caption>
+ * var clicks = Rx.Observable.fromEvent(document, 'click');
+ * var positions = clicks.map(ev => ev.clientX);
+ * positions.subscribe(x => console.log(x));
+ *
+ * @see {@link mapTo}
+ * @see {@link pluck}
+ *
+ * @param {function(value: T, index: number): R} project The function to apply
+ * to each `value` emitted by the source Observable. The `index` parameter is
+ * the number `i` for the i-th emission that has happened since the
+ * subscription, starting from the number `0`.
+ * @param {any} [thisArg] An optional argument to define what `this` is in the
+ * `project` function.
+ * @return {Observable<R>} An Observable that emits the values from the source
+ * Observable transformed by the given `project` function.
+ * @method map
+ * @owner Observable
+ */
+function map(project, thisArg) {
+    if (typeof project !== 'function') {
+        throw new TypeError('argument is not a function. Are you looking for `mapTo()`?');
+    }
+    return this.lift(new MapOperator(project, thisArg));
+}
+exports.map = map;
+var MapOperator = (function () {
+    function MapOperator(project, thisArg) {
+        this.project = project;
+        this.thisArg = thisArg;
+    }
+    MapOperator.prototype.call = function (subscriber, source) {
+        return source._subscribe(new MapSubscriber(subscriber, this.project, this.thisArg));
+    };
+    return MapOperator;
+}());
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+var MapSubscriber = (function (_super) {
+    __extends(MapSubscriber, _super);
+    function MapSubscriber(destination, project, thisArg) {
+        _super.call(this, destination);
+        this.project = project;
+        this.count = 0;
+        this.thisArg = thisArg || this;
+    }
+    // NOTE: This looks unoptimized, but it's actually purposefully NOT
+    // using try/catch optimizations.
+    MapSubscriber.prototype._next = function (value) {
+        var result;
+        try {
+            result = this.project.call(this.thisArg, value, this.count++);
+        }
+        catch (err) {
+            this.destination.error(err);
+            return;
+        }
+        this.destination.next(result);
+    };
+    return MapSubscriber;
+}(Subscriber_1.Subscriber));
+
+},{"../Subscriber":101}],108:[function(require,module,exports){
 "use strict";
 var root_1 = require('../util/root');
 /**
@@ -12490,7 +14139,7 @@ function toPromise(PromiseCtor) {
 }
 exports.toPromise = toPromise;
 
-},{"../util/root":92}],84:[function(require,module,exports){
+},{"../util/root":117}],109:[function(require,module,exports){
 "use strict";
 var root_1 = require('../util/root');
 var Symbol = root_1.root.Symbol;
@@ -12512,14 +14161,14 @@ else {
     exports.$$observable = '@@observable';
 }
 
-},{"../util/root":92}],85:[function(require,module,exports){
+},{"../util/root":117}],110:[function(require,module,exports){
 "use strict";
 var root_1 = require('../util/root');
 var Symbol = root_1.root.Symbol;
 exports.$$rxSubscriber = (typeof Symbol === 'function' && typeof Symbol.for === 'function') ?
     Symbol.for('rxSubscriber') : '@@rxSubscriber';
 
-},{"../util/root":92}],86:[function(require,module,exports){
+},{"../util/root":117}],111:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -12545,7 +14194,7 @@ var ObjectUnsubscribedError = (function (_super) {
 }(Error));
 exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
 
-},{}],87:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -12568,30 +14217,30 @@ var UnsubscriptionError = (function (_super) {
 }(Error));
 exports.UnsubscriptionError = UnsubscriptionError;
 
-},{}],88:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 "use strict";
 // typeof any so that it we don't have to cast when comparing a result to the error object
 exports.errorObject = { e: {} };
 
-},{}],89:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 "use strict";
 exports.isArray = Array.isArray || (function (x) { return x && typeof x.length === 'number'; });
 
-},{}],90:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 "use strict";
 function isFunction(x) {
     return typeof x === 'function';
 }
 exports.isFunction = isFunction;
 
-},{}],91:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 "use strict";
 function isObject(x) {
     return x != null && typeof x === 'object';
 }
 exports.isObject = isObject;
 
-},{}],92:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 (function (global){
 "use strict";
 var objectTypes = {
@@ -12612,12 +14261,12 @@ if (freeGlobal && (freeGlobal.global === freeGlobal || freeGlobal.window === fre
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],93:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 "use strict";
 function throwError(e) { throw e; }
 exports.throwError = throwError;
 
-},{}],94:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 "use strict";
 var Subscriber_1 = require('../Subscriber');
 var rxSubscriber_1 = require('../symbol/rxSubscriber');
@@ -12634,7 +14283,7 @@ function toSubscriber(nextOrObserver, error, complete) {
 }
 exports.toSubscriber = toSubscriber;
 
-},{"../Subscriber":80,"../symbol/rxSubscriber":85}],95:[function(require,module,exports){
+},{"../Subscriber":101,"../symbol/rxSubscriber":110}],120:[function(require,module,exports){
 "use strict";
 var errorObject_1 = require('./errorObject');
 var tryCatchTarget;
@@ -12654,24 +14303,33 @@ function tryCatch(fn) {
 exports.tryCatch = tryCatch;
 ;
 
-},{"./errorObject":88}],96:[function(require,module,exports){
+},{"./errorObject":113}],121:[function(require,module,exports){
 "use strict";
 var core_1 = require('@angular/core');
+var http_1 = require('@angular/http');
 var map_1 = require('./map');
-var list_1 = require('./list');
+var location_1 = require('./location');
+var injector = core_1.ReflectiveInjector.resolveAndCreate([
+    http_1.HTTP_PROVIDERS,
+    map_1.MapComponent,
+    location_1.FourSquare,
+    location_1.LocationList
+]);
 var App = (function () {
     function App(map, list) {
         this.map = map;
         this.list = list;
         ko.applyBindings(list);
-        $(document).foundation();
+        // list.loading$.subscribe((val: boolean) => {
+        //   if (!val) list.addToMap(map);
+        // });
+        // $(document).foundation();
     }
     return App;
 }());
-var injector = core_1.ReflectiveInjector.resolveAndCreate([map_1.MapComponent, list_1.ListComponent]);
-window.app = new App(injector.get(map_1.MapComponent), injector.get(list_1.ListComponent));
+window.app = new App(injector.get(map_1.MapComponent), injector.get(location_1.LocationList));
 
-},{"./list":97,"./map":98,"@angular/core":1}],97:[function(require,module,exports){
+},{"./location":123,"./map":126,"@angular/core":1,"@angular/http":77}],122:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -12683,44 +14341,198 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
-var map_1 = require('./map');
-var ListComponent = (function () {
-    function ListComponent(map) {
+var http_1 = require('@angular/http');
+var Observable_1 = require('rxjs/Observable');
+require('rxjs/add/operator/map');
+require('rxjs/add/operator/catch');
+var FourSquare = (function () {
+    function FourSquare(http) {
+        this.http = http;
+    }
+    FourSquare.prototype.getVenues = function () {
+        var venuesUrl = 'https://api.foursquare.com/v2/venues/search';
+        var params = new http_1.URLSearchParams();
+        params.set('client_id', 'J5P3E1YAPPJFJF0ZXTQCXKIFJAFMBBDRONBH5FUKKXZ0C1PE');
+        params.set('client_secret', 'C4HKGNBQYPKI1QPHGG3FFMS3MTUVZYEGARBT3WY0OXRWNWUI');
+        params.set('v', '20160605');
+        params.set('near', 'Soquel, CA');
+        params.set('limit', '20');
+        return this.http
+            .get(venuesUrl, { search: params })
+            .map(this.extractData)
+            .catch(this.handleError);
+    };
+    FourSquare.prototype.extractData = function (res) {
+        var body = res.json();
+        return body.response.venues || {};
+    };
+    FourSquare.prototype.handleError = function (error) {
+        return Observable_1.Observable.throw(error);
+    };
+    FourSquare = __decorate([
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [http_1.Http])
+    ], FourSquare);
+    return FourSquare;
+}());
+exports.FourSquare = FourSquare;
+
+},{"@angular/core":1,"@angular/http":77,"rxjs/Observable":97,"rxjs/add/operator/catch":103,"rxjs/add/operator/map":104}],123:[function(require,module,exports){
+"use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
+__export(require('./foursquare'));
+__export(require('./model'));
+__export(require('./list'));
+
+},{"./foursquare":122,"./list":124,"./model":125}],124:[function(require,module,exports){
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var core_1 = require('@angular/core');
+var model_1 = require('./model');
+var foursquare_1 = require('./foursquare');
+var map_1 = require('../map');
+// const customLocations = [
+//   {
+//     title: '',
+//
+//   }
+// ];
+var LocationList = (function () {
+    function LocationList(_frsq, _map) {
         var _this = this;
-        this.map = map;
-        this.filter = ko.observable('');
-        this.items = ko.observableArray(this.map.markers);
-        this.getItems = ko.pureComputed(function () {
-            var filter = _this.filter();
+        this._frsq = _frsq;
+        this._map = _map;
+        this.list = [];
+        this.loading$ = ko.observable(true);
+        this.filter$ = ko.observable('');
+        this.list$ = ko.observableArray([]);
+        this.get$ = ko.pureComputed(function () {
+            var filter = _this.filter$();
             if (filter === '')
-                return _this.items();
+                return _this.list$();
             var index = 0;
-            return ko.utils.arrayFilter(_this.items(), function (item) {
-                console.log('Running filter!');
+            return ko.utils.arrayFilter(_this.list$(), function (item) {
                 var title = item.getTitle().toLowerCase();
                 // Return item if filter is a substring of item
                 if (title.indexOf(filter.toLowerCase()) > -1) {
-                    _this.map.markers[index].setVisible(true);
+                    _this.list[index].setVisible(true);
                     index++;
                     return true;
                 }
                 else {
-                    _this.map.markers[index].setVisible(false);
+                    _this.list[index].setVisible(false);
                     index++;
                     return false;
                 }
             });
         });
+        this.get();
     }
-    ListComponent = __decorate([
+    LocationList.prototype.get = function () {
+        var _this = this;
+        // Set to loading
+        this.loading$(true);
+        // Call for list reset
+        this.reset();
+        // Make FourSquare API request - venue request for Soquel, CA
+        // Client id: J5P3E1YAPPJFJF0ZXTQCXKIFJAFMBBDRONBH5FUKKXZ0C1PE
+        // Client secret: C4HKGNBQYPKI1QPHGG3FFMS3MTUVZYEGARBT3WY0OXRWNWUI
+        this._frsq.getVenues()
+            .subscribe(function (list) { return _this.convertVenues(list); }, function (error) { return _this.handleError(error); });
+    };
+    LocationList.prototype.addToMap = function (map, i) {
+        var _this = this;
+        if (i === void 0) { i = 0; }
+        if (i === this.list.length)
+            return;
+        this.list[i].setMap(map);
+        console.log("Location \"" + this.list[i].getTitle() + "\" added to map as marker.");
+        i++;
+        // Recursive with timeout
+        setTimeout(function () { return _this.addToMap(map, i); }, 200);
+    };
+    LocationList.prototype.convertVenues = function (venueList) {
+        // Loop through response results, creating "Location"s
+        for (var i = 0; i < venueList.length; i++) {
+            this.list.push(new model_1.Location({
+                title: venueList[i].name,
+                position: new google.maps.LatLng(venueList[i].lat, venueList[i].lng),
+                // animation: google.maps.Animation.DROP,
+                map: this._map
+            }));
+        }
+        // Set loading = false after handling response
+        this.list$(this.list);
+        this.loading$(false);
+    };
+    LocationList.prototype.handleError = function (error) {
+        this.loading$(false);
+        // TODO: Handle error, maybe re-request
+        console.log(error);
+    };
+    LocationList.prototype.reset = function () {
+        // Noop if list is empty
+        if (this.list.length === 0)
+            return;
+        // Loop through list, removing markers from map
+        for (var i = 0; i < this.list$().length; i++) {
+            this.list[i].setMap(null);
+        }
+        // Clear location list
+        this.list$([]);
+        this.list = [];
+    };
+    LocationList = __decorate([
         core_1.Injectable(), 
-        __metadata('design:paramtypes', [map_1.MapComponent])
-    ], ListComponent);
-    return ListComponent;
+        __metadata('design:paramtypes', [foursquare_1.FourSquare, map_1.MapComponent])
+    ], LocationList);
+    return LocationList;
 }());
-exports.ListComponent = ListComponent;
+exports.LocationList = LocationList;
 
-},{"./map":98,"@angular/core":1}],98:[function(require,module,exports){
+},{"../map":126,"./foursquare":122,"./model":125,"@angular/core":1}],125:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+// Location data and marker
+var Location = (function (_super) {
+    __extends(Location, _super);
+    // TODO: location - address, long./lat.
+    function Location(options) {
+        _super.call(this, options);
+        // TODO: Handle Location specific options
+    }
+    Location.prototype.onClick = function () {
+        // open info window or dom based info
+        console.log("Location " + this.title + " was clicked.");
+    };
+    Location.prototype.activate = function () {
+        // Center map on marker
+        var _this = this;
+        // Run bounce animation once
+        // Wait then, kill future animation loops
+        this.setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout(function () { return _this.setAnimation(null); }, 700);
+        // Open info window or dom based info
+    };
+    return Location;
+}(google.maps.Marker));
+exports.Location = Location;
+
+},{}],126:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -12739,7 +14551,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var core_1 = require('@angular/core');
 var MapComponent = (function (_super) {
     __extends(MapComponent, _super);
-    // markers: Array<Marker>;
     function MapComponent() {
         _super.call(this, document.getElementById('map'), {
             center: new google.maps.LatLng(36.988363, -121.9566037),
@@ -12749,51 +14560,6 @@ var MapComponent = (function (_super) {
                 position: google.maps.ControlPosition.LEFT_BOTTOM
             }
         });
-        // let that = this;
-        // this.markers = [
-        //   new Marker({
-        //     title: 'Jake\'s House',
-        //     description: 'My beloved home of the last 18 years nested in the nice suburbs of Soquel, California and within walking distance of the beach.',
-        //     position: new google.maps.LatLng(36.989236, -121.941330),
-        //     visible: true,
-        //     map: that
-        //   }),
-        //   new Marker({
-        //     title: 'Neighborhood Garden',
-        //     description: '',
-        //     position: new google.maps.LatLng(36.989015, -121.941241),
-        //     visible: true,
-        //     map: that
-        //   }),
-        //   new Marker({
-        //     title: 'Community Garden',
-        //     description: '',
-        //     position: new google.maps.LatLng(36.989223, -121.942641),
-        //     visible: true,
-        //     map: that
-        //   }),
-        //   new Marker({
-        //     title: 'Apt. Management Office',
-        //     description: '',
-        //     position: new google.maps.LatLng(36.989097, -121.942330),
-        //     visible: true,
-        //     map: that
-        //   }),
-        //   new Marker({
-        //     title: 'Abandoned Building',
-        //     description: '',
-        //     position: new google.maps.LatLng(36.989864, -121.941957),
-        //     visible: true,
-        //     map: that
-        //   }),
-        //   new Marker({
-        //     title: 'Unnamed Creek',
-        //     description: '',
-        //     position: new google.maps.LatLng(36.989183, -121.940962),
-        //     visible: true,
-        //     map: that
-        //   })
-        // ];
     }
     MapComponent = __decorate([
         core_1.Injectable(), 
@@ -12803,4 +14569,4 @@ var MapComponent = (function (_super) {
 }(google.maps.Map));
 exports.MapComponent = MapComponent;
 
-},{"@angular/core":1}]},{},[96]);
+},{"@angular/core":1}]},{},[121]);

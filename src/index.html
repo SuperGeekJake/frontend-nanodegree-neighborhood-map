@@ -20,15 +20,21 @@
         <nav id="offCanvas" class="off-canvas position-left reveal-for-large" data-off-canvas>
           <ul class="vertical menu">
             <li>
-              <input type="search" placeholder="Search…" data-bind="value: filter, valueUpdate: 'keyup'" autocomplete="off">
+              <input type="search" placeholder="Search…" disabled data-bind="value: filter$, valueUpdate: 'keyup', attr: {disabled: loading$()}" autocomplete="off">
             </li>
           </ul>
-          <ul class="accordion" data-accordion data-allow-all-closed="true" data-bind="template: {foreach: getItems}">
-            <li class="accordion-item" data-accordion-item data-bind="click: onClick">
-              <a href="#" class="accordion-title" data-bind="text: title"></a>
-              <div class="accordion-content" data-tab-content data-bind="text: description"></div>
+          <ul class="location-list location-list--loading vertical menu" data-allow-all-closed="true" data-bind="template: {foreach: get$}, css: {'location-list--loading': loading$()}">
+            <li>
+              <a href="#" data-bind="text: title, click: onClick"></a>
             </li>
           </ul>
+          <div class="location-list__loader loader loader--loading" data-bind="css: {'loader--loading': loading$()}">
+            <div class="loader__container">
+              <div class="loader__dot"></div>
+              <div class="loader__dot"></div>
+              <div class="loader__dot"></div>
+            </div>
+          </div>
         </nav>
         <main class="off-canvas-content" data-off-canvas-content>
           <div id="map"></div>

@@ -2,6 +2,8 @@
 @import "foundation-sites/scss/foundation";
 @include foundation-everything($flex: true);
 
+@import "loader";
+
 /**
  * Custom Styles
  */
@@ -26,4 +28,14 @@
 .map-overlay {
   position: relative;
   z-index: 1;
+}
+
+.location-list {}
+
+.location-list a {
+  border-bottom: $input-border;
+}
+
+.location-list--loading {
+  display: none;
 }

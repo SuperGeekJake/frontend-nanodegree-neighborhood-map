@@ -8,10 +8,14 @@ const imagemin = require('gulp-imagemin');
 const htmlmin = require('gulp-htmlmin');
 const browserify = require('browserify');
 const tsify = require('tsify');
+const watchify = require('watchify');
 const uglify = require('gulp-uglify');
 const buffer = require('vinyl-buffer');
 const source = require('vinyl-source-stream');
 const sass = require('gulp-sass');
+const postcss = require('gulp-postcss');
+const autoprefixer = require('autoprefixer');
+const sourcemaps = require('gulp-sourcemaps');
 const browserSync = require('browser-sync').create();
 const argv = require('yargs')
   .option('p', {
@@ -71,15 +75,31 @@ gulp.task('build:scripts', () => {
       .pipe(gulp.dest('dist/js'));
   } else {
     // TODO: Add source mapping
-    return browserify()
+    return browserify({
+        plugin: [tsify]
+      })
       .add(srcPaths.app)
-      .plugin('tsify')
       .bundle()
       .on('error', (error) => console.error(error.toString()))
       .pipe(source('bundle.js'))
       .pipe(buffer())
       .pipe(gulp.dest('dist/js'));
   }
+});
+
+gulp.task('watch:scripts', () => {
+  // TODO: Add source mapping
+  return browserify({
+      cache: {},
+      packageCache: {},
+      plugin: [watchify, tsify]
+    })
+    .add(srcPaths.app)
+    .bundle()
+    .on('error', (error) => console.error(error.toString()))
+    .pipe(source('bundle.js'))
+    .pipe(buffer())
+    .pipe(gulp.dest('dist/js'));
 });
 
 gulp.task('build:styles', () => {
@@ -91,15 +111,18 @@ gulp.task('build:styles', () => {
           'bower_components'
         ]
       }).on('error', sass.logError))
+      .pipe(postcss([ autoprefixer({ browsers: ['last 2 versions'] }) ]))
   		.pipe(gulp.dest('dist/css'));
   } else {
-    // TODO: Add source mapping
     return gulp.src(srcPaths.styles)
+      .pipe(sourcemaps.init())
       .pipe(sass({
         includePaths: [
           'bower_components'
         ]
       }).on('error', sass.logError))
+      .pipe(postcss([ autoprefixer({ browsers: ['last 2 versions'] }) ]))
+      .pipe(sourcemaps.write('./'))
   		.pipe(gulp.dest('dist/css'));
   }
 });
@@ -110,7 +133,7 @@ gulp.task('default', ['clean'], (cb) => {
 
 gulp.task('watch', ['default'], () => {
   gulp.watch(srcPaths.styles, ['build:styles']);
-  gulp.watch(srcPaths.scripts, ['build:scripts']);
+  gulp.watch(srcPaths.scripts, ['watch:scripts']);
   gulp.watch(srcPaths.images, ['build:images']);
   gulp.watch(srcPaths.pages, ['build:pages']);
 });
