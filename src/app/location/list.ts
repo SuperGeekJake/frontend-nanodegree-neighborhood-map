@@ -78,9 +78,8 @@ export class LocationList {
     for (let i = 0; i < venueList.length; i++) {
       this.list.push(new Location({
         title: venueList[i].name,
-        position: new google.maps.LatLng(venueList[i].lat, venueList[i].lng),
-        // animation: google.maps.Animation.DROP,
-        map: this._map
+        position: new google.maps.LatLng(venueList[i].location.lat, venueList[i].location.lng),
+        animation: google.maps.Animation.DROP
       }));
     }
 

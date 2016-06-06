@@ -10,7 +10,7 @@ export class Location extends google.maps.Marker {
 
   onClick() {
     // open info window or dom based info
-    console.log(`Location ${this.title} was clicked.`);
+    console.log(`Location ${this.getTitle()} was clicked.`);
   }
 
   activate() {

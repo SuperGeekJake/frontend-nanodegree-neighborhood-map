@@ -14320,9 +14320,10 @@ var App = (function () {
         this.map = map;
         this.list = list;
         ko.applyBindings(list);
-        // list.loading$.subscribe((val: boolean) => {
-        //   if (!val) list.addToMap(map);
-        // });
+        list.loading$.subscribe(function (val) {
+            if (val === false)
+                list.addToMap(map);
+        });
         // $(document).foundation();
     }
     return App;
@@ -14466,9 +14467,8 @@ var LocationList = (function () {
         for (var i = 0; i < venueList.length; i++) {
             this.list.push(new model_1.Location({
                 title: venueList[i].name,
-                position: new google.maps.LatLng(venueList[i].lat, venueList[i].lng),
-                // animation: google.maps.Animation.DROP,
-                map: this._map
+                position: new google.maps.LatLng(venueList[i].location.lat, venueList[i].location.lng),
+                animation: google.maps.Animation.DROP
             }));
         }
         // Set loading = false after handling response
@@ -14517,7 +14517,7 @@ var Location = (function (_super) {
     }
     Location.prototype.onClick = function () {
         // open info window or dom based info
-        console.log("Location " + this.title + " was clicked.");
+        console.log("Location " + this.getTitle() + " was clicked.");
     };
     Location.prototype.activate = function () {
         // Center map on marker
