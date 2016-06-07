@@ -1,22 +1,16 @@
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Observable';
+import {Utilities as _} from '../utils';
 import {Location} from './model';
 import {FourSquare} from './foursquare';
-import {MapComponent} from '../map';
-
-// const customLocations = [
-//   {
-//     title: '',
-//
-//   }
-// ];
+import {jakeFavorites} from './favs';
 
 @Injectable()
 export class LocationList {
-  private list: Array<Location> = [];
+  list$: KnockoutObservableArray<Location> = ko.observableArray([]);
   loading$: KnockoutObservable<boolean> = ko.observable(true);
   filter$: KnockoutObservable<string> = ko.observable('');
-  list$: KnockoutObservableArray<Location> = ko.observableArray([]);
+
   get$: KnockoutComputed<Location[]> = ko.pureComputed(() => {
     let filter = this.filter$();
     if (filter === '') return this.list$();
@@ -27,11 +21,11 @@ export class LocationList {
 
       // Return item if filter is a substring of item
       if (title.indexOf(filter.toLowerCase()) > -1) {
-        this.list[index].setVisible(true);
+        this.list$()[index].setVisible(true);
         index++;
         return true;
       } else {
-        this.list[index].setVisible(false);
+        this.list$()[index].setVisible(false);
         index++;
         return false;
       }
@@ -39,8 +33,7 @@ export class LocationList {
   });
 
   constructor(
-    private _frsq: FourSquare,
-    private _map: MapComponent
+    private _frsq: FourSquare
   ) {
     this.get();
   }
@@ -63,10 +56,9 @@ export class LocationList {
   }
 
   addToMap(map, i: number = 0) {
-    if (i === this.list.length) return;
+    if (i === this.list$().length) return;
 
-    this.list[i].setMap(map);
-    console.log(`Location "${this.list[i].getTitle()}" added to map as marker.`);
+    this.list$()[i].setMap(map);
     i++;
 
     // Recursive with timeout
@@ -74,18 +66,60 @@ export class LocationList {
   }
 
   private convertVenues(venueList: Array<any>) {
+    // Filter known bad results/duplicates
+    venueList = this.filter(venueList);
+
+    // Inject custom venues
+    venueList = venueList.concat(jakeFavorites);
+
     // Loop through response results, creating "Location"s
     for (let i = 0; i < venueList.length; i++) {
-      this.list.push(new Location({
-        title: venueList[i].name,
+      this.list$.push(new Location({
+        title: _.titleCase(venueList[i].name),
         position: new google.maps.LatLng(venueList[i].location.lat, venueList[i].location.lng),
         animation: google.maps.Animation.DROP
       }));
     }
 
+    // Sort locations by title, ascending
+    this.list$.sort(this.sort);
+
     // Set loading = false after handling response
-    this.list$(this.list);
     this.loading$(false);
+  }
+
+  /**
+   * Sort list$ by title in ascending order
+   * @param  {Location} left  [description]
+   * @param  {Location} right [description]
+   * @return {number}         [description]
+   */
+  private sort(left: Location, right: Location) {
+    const leftTitle = left.getTitle().toLowerCase();
+    const rightTitle = right.getTitle().toLowerCase();
+
+    if (leftTitle < rightTitle) return -1;
+    if (leftTitle > rightTitle) return 1;
+
+    // No sort
+    return 0;
+  }
+
+  private filter(list: Array<any>) {
+    return list.filter((venue) => {
+      switch(venue.name.toLowerCase()) {
+        case 'soquel, california':
+        case 'sunrise cafe':
+        case 'star of siam':
+        case 'tortilla flats':
+        case 'tortilla flats restaurant':
+        case 'taquiera la cabana':
+        case 'ugly mug coffeehouse':
+          return false;
+      }
+
+      return true;
+    });
   }
 
   private handleError(error: any) {
@@ -97,15 +131,14 @@ export class LocationList {
 
   private reset() {
     // Noop if list is empty
-    if (this.list.length === 0) return;
+    if (this.list$().length === 0) return;
 
     // Loop through list, removing markers from map
     for (let i = 0; i < this.list$().length; i++) {
-      this.list[i].setMap(null);
+      this.list$()[i].setMap(null);
     }
 
     // Clear location list
     this.list$([]);
-    this.list = [];
   }
 }

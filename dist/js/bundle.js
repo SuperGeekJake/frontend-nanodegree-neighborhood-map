@@ -14330,7 +14330,52 @@ var App = (function () {
 }());
 window.app = new App(injector.get(map_1.MapComponent), injector.get(location_1.LocationList));
 
-},{"./location":123,"./map":126,"@angular/core":1,"@angular/http":77}],122:[function(require,module,exports){
+},{"./location":124,"./map":127,"@angular/core":1,"@angular/http":77}],122:[function(require,module,exports){
+"use strict";
+exports.jakeFavorites = [
+    {
+        jake: true,
+        name: 'Star of Siam',
+        location: {
+            lat: 36.988521,
+            lng: -121.957482
+        }
+    },
+    {
+        jake: true,
+        name: 'Tortilla Flats',
+        location: {
+            lat: 36.987771,
+            lng: -121.957982
+        }
+    },
+    {
+        jake: true,
+        name: 'Sunrise Cafe',
+        location: {
+            lat: 36.988161,
+            lng: -121.956841
+        }
+    },
+    {
+        jake: true,
+        name: 'Taquiera La Cabana',
+        location: {
+            lat: 36.989365,
+            lng: -121.957059
+        }
+    },
+    {
+        jake: true,
+        name: 'Ugly Mug CoffeeHouse',
+        location: {
+            lat: 36.987899,
+            lng: -121.957545
+        }
+    }
+];
+
+},{}],123:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -14378,7 +14423,7 @@ var FourSquare = (function () {
 }());
 exports.FourSquare = FourSquare;
 
-},{"@angular/core":1,"@angular/http":77,"rxjs/Observable":97,"rxjs/add/operator/catch":103,"rxjs/add/operator/map":104}],123:[function(require,module,exports){
+},{"@angular/core":1,"@angular/http":77,"rxjs/Observable":97,"rxjs/add/operator/catch":103,"rxjs/add/operator/map":104}],124:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -14387,7 +14432,7 @@ __export(require('./foursquare'));
 __export(require('./model'));
 __export(require('./list'));
 
-},{"./foursquare":122,"./list":124,"./model":125}],124:[function(require,module,exports){
+},{"./foursquare":123,"./list":125,"./model":126}],125:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -14399,24 +14444,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var utils_1 = require('../utils');
 var model_1 = require('./model');
 var foursquare_1 = require('./foursquare');
-var map_1 = require('../map');
-// const customLocations = [
-//   {
-//     title: '',
-//
-//   }
-// ];
+var favs_1 = require('./favs');
 var LocationList = (function () {
-    function LocationList(_frsq, _map) {
+    function LocationList(_frsq) {
         var _this = this;
         this._frsq = _frsq;
-        this._map = _map;
-        this.list = [];
+        this.list$ = ko.observableArray([]);
         this.loading$ = ko.observable(true);
         this.filter$ = ko.observable('');
-        this.list$ = ko.observableArray([]);
         this.get$ = ko.pureComputed(function () {
             var filter = _this.filter$();
             if (filter === '')
@@ -14426,12 +14464,12 @@ var LocationList = (function () {
                 var title = item.getTitle().toLowerCase();
                 // Return item if filter is a substring of item
                 if (title.indexOf(filter.toLowerCase()) > -1) {
-                    _this.list[index].setVisible(true);
+                    _this.list$()[index].setVisible(true);
                     index++;
                     return true;
                 }
                 else {
-                    _this.list[index].setVisible(false);
+                    _this.list$()[index].setVisible(false);
                     index++;
                     return false;
                 }
@@ -14454,26 +14492,61 @@ var LocationList = (function () {
     LocationList.prototype.addToMap = function (map, i) {
         var _this = this;
         if (i === void 0) { i = 0; }
-        if (i === this.list.length)
+        if (i === this.list$().length)
             return;
-        this.list[i].setMap(map);
-        console.log("Location \"" + this.list[i].getTitle() + "\" added to map as marker.");
+        this.list$()[i].setMap(map);
         i++;
         // Recursive with timeout
         setTimeout(function () { return _this.addToMap(map, i); }, 200);
     };
     LocationList.prototype.convertVenues = function (venueList) {
+        // Filter known bad results/duplicates
+        venueList = this.filter(venueList);
+        // Inject custom venues
+        venueList = venueList.concat(favs_1.jakeFavorites);
         // Loop through response results, creating "Location"s
         for (var i = 0; i < venueList.length; i++) {
-            this.list.push(new model_1.Location({
-                title: venueList[i].name,
+            this.list$.push(new model_1.Location({
+                title: utils_1.Utilities.titleCase(venueList[i].name),
                 position: new google.maps.LatLng(venueList[i].location.lat, venueList[i].location.lng),
                 animation: google.maps.Animation.DROP
             }));
         }
+        // Sort locations by title, ascending
+        this.list$.sort(this.sort);
         // Set loading = false after handling response
-        this.list$(this.list);
         this.loading$(false);
+    };
+    /**
+     * Sort list$ by title in ascending order
+     * @param  {Location} left  [description]
+     * @param  {Location} right [description]
+     * @return {number}         [description]
+     */
+    LocationList.prototype.sort = function (left, right) {
+        var leftTitle = left.getTitle().toLowerCase();
+        var rightTitle = right.getTitle().toLowerCase();
+        if (leftTitle < rightTitle)
+            return -1;
+        if (leftTitle > rightTitle)
+            return 1;
+        // No sort
+        return 0;
+    };
+    LocationList.prototype.filter = function (list) {
+        return list.filter(function (venue) {
+            switch (venue.name.toLowerCase()) {
+                case 'soquel, california':
+                case 'sunrise cafe':
+                case 'star of siam':
+                case 'tortilla flats':
+                case 'tortilla flats restaurant':
+                case 'taquiera la cabana':
+                case 'ugly mug coffeehouse':
+                    return false;
+            }
+            return true;
+        });
     };
     LocationList.prototype.handleError = function (error) {
         this.loading$(false);
@@ -14482,25 +14555,24 @@ var LocationList = (function () {
     };
     LocationList.prototype.reset = function () {
         // Noop if list is empty
-        if (this.list.length === 0)
+        if (this.list$().length === 0)
             return;
         // Loop through list, removing markers from map
         for (var i = 0; i < this.list$().length; i++) {
-            this.list[i].setMap(null);
+            this.list$()[i].setMap(null);
         }
         // Clear location list
         this.list$([]);
-        this.list = [];
     };
     LocationList = __decorate([
         core_1.Injectable(), 
-        __metadata('design:paramtypes', [foursquare_1.FourSquare, map_1.MapComponent])
+        __metadata('design:paramtypes', [foursquare_1.FourSquare])
     ], LocationList);
     return LocationList;
 }());
 exports.LocationList = LocationList;
 
-},{"../map":126,"./foursquare":122,"./model":125,"@angular/core":1}],125:[function(require,module,exports){
+},{"../utils":128,"./favs":122,"./foursquare":123,"./model":126,"@angular/core":1}],126:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -14532,7 +14604,7 @@ var Location = (function (_super) {
 }(google.maps.Marker));
 exports.Location = Location;
 
-},{}],126:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -14569,4 +14641,16 @@ var MapComponent = (function (_super) {
 }(google.maps.Map));
 exports.MapComponent = MapComponent;
 
-},{"@angular/core":1}]},{},[121]);
+},{"@angular/core":1}],128:[function(require,module,exports){
+"use strict";
+var Utilities = (function () {
+    function Utilities() {
+    }
+    Utilities.titleCase = function (str) {
+        return str.replace(/(^|\s)[a-z]/g, function (char) { return char.toUpperCase(); });
+    };
+    return Utilities;
+}());
+exports.Utilities = Utilities;
+
+},{}]},{},[121]);
