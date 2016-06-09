@@ -14322,7 +14322,7 @@ var App = (function () {
         ko.applyBindings(list);
         list.loading$.subscribe(function (val) {
             if (val === false)
-                list.addToMap(map);
+                list.addToMap();
         });
         // $(document).foundation();
     }
@@ -14339,7 +14339,12 @@ exports.jakeFavorites = [
         location: {
             lat: 36.988521,
             lng: -121.957482
-        }
+        },
+        contact: {},
+        categories: [{
+                name: 'Restaurant',
+                primary: true
+            }]
     },
     {
         jake: true,
@@ -14347,7 +14352,12 @@ exports.jakeFavorites = [
         location: {
             lat: 36.987771,
             lng: -121.957982
-        }
+        },
+        contact: {},
+        categories: [{
+                name: 'Restaurant',
+                primary: true
+            }]
     },
     {
         jake: true,
@@ -14355,7 +14365,12 @@ exports.jakeFavorites = [
         location: {
             lat: 36.988161,
             lng: -121.956841
-        }
+        },
+        contact: {},
+        categories: [{
+                name: 'Restaurant',
+                primary: true
+            }]
     },
     {
         jake: true,
@@ -14363,7 +14378,12 @@ exports.jakeFavorites = [
         location: {
             lat: 36.989365,
             lng: -121.957059
-        }
+        },
+        contact: {},
+        categories: [{
+                name: 'Restaurant',
+                primary: true
+            }]
     },
     {
         jake: true,
@@ -14371,7 +14391,12 @@ exports.jakeFavorites = [
         location: {
             lat: 36.987899,
             lng: -121.957545
-        }
+        },
+        contact: {},
+        categories: [{
+                name: 'Coffeeshop',
+                primary: true
+            }]
     }
 ];
 
@@ -14444,14 +14469,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
-var utils_1 = require('../utils');
-var model_1 = require('./model');
 var foursquare_1 = require('./foursquare');
+var model_1 = require('./model');
+var map_1 = require('../map');
 var favs_1 = require('./favs');
 var LocationList = (function () {
-    function LocationList(_frsq) {
+    function LocationList(_frsq, _map) {
         var _this = this;
         this._frsq = _frsq;
+        this._map = _map;
         this.list$ = ko.observableArray([]);
         this.loading$ = ko.observable(true);
         this.filter$ = ko.observable('');
@@ -14489,15 +14515,15 @@ var LocationList = (function () {
         this._frsq.getVenues()
             .subscribe(function (list) { return _this.convertVenues(list); }, function (error) { return _this.handleError(error); });
     };
-    LocationList.prototype.addToMap = function (map, i) {
+    LocationList.prototype.addToMap = function (i) {
         var _this = this;
         if (i === void 0) { i = 0; }
         if (i === this.list$().length)
             return;
-        this.list$()[i].setMap(map);
+        this.list$()[i].setMap(this._map);
         i++;
         // Recursive with timeout
-        setTimeout(function () { return _this.addToMap(map, i); }, 200);
+        setTimeout(function () { return _this.addToMap(i); }, 200);
     };
     LocationList.prototype.convertVenues = function (venueList) {
         // Filter known bad results/duplicates
@@ -14506,11 +14532,7 @@ var LocationList = (function () {
         venueList = venueList.concat(favs_1.jakeFavorites);
         // Loop through response results, creating "Location"s
         for (var i = 0; i < venueList.length; i++) {
-            this.list$.push(new model_1.Location({
-                title: utils_1.Utilities.titleCase(venueList[i].name),
-                position: new google.maps.LatLng(venueList[i].location.lat, venueList[i].location.lng),
-                animation: google.maps.Animation.DROP
-            }));
+            this.list$.push(new model_1.Location(venueList[i], this._map));
         }
         // Sort locations by title, ascending
         this.list$.sort(this.sort);
@@ -14566,45 +14588,118 @@ var LocationList = (function () {
     };
     LocationList = __decorate([
         core_1.Injectable(), 
-        __metadata('design:paramtypes', [foursquare_1.FourSquare])
+        __metadata('design:paramtypes', [foursquare_1.FourSquare, map_1.MapComponent])
     ], LocationList);
     return LocationList;
 }());
 exports.LocationList = LocationList;
 
-},{"../utils":128,"./favs":122,"./foursquare":123,"./model":126,"@angular/core":1}],126:[function(require,module,exports){
+},{"../map":127,"./favs":122,"./foursquare":123,"./model":126,"@angular/core":1}],126:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+var utils_1 = require('../utils');
 // Location data and marker
 var Location = (function (_super) {
     __extends(Location, _super);
-    // TODO: location - address, long./lat.
-    function Location(options) {
-        _super.call(this, options);
-        // TODO: Handle Location specific options
+    function Location(venue, map) {
+        var _this = this;
+        _super.call(this, {
+            title: utils_1.Utilities.titleCase(venue.name),
+            position: new google.maps.LatLng(venue.location.lat, venue.location.lng),
+            animation: google.maps.Animation.DROP
+        });
+        this.map = map;
+        this.category = null;
+        this.address = null;
+        this.content = null;
+        this.phone = null;
+        this.setCategory(venue.categories);
+        this.setAddress(venue.location.address);
+        this.setPhone(venue.contact.phone);
+        this.setContent();
+        this.info = new google.maps.InfoWindow({
+            content: this.getContent()
+        });
+        this.addListener('click', function () { return _this.onClick(); });
     }
     Location.prototype.onClick = function () {
-        // open info window or dom based info
-        console.log("Location " + this.getTitle() + " was clicked.");
+        this.info.open(this.map, this);
     };
-    Location.prototype.activate = function () {
-        // Center map on marker
+    Location.prototype.setContent = function () {
+        var template = '<div class="content">';
+        template += "<h4>" + this.getTitle() + "</h4>";
+        if (this.getCategory())
+            template += "<div>" + this.getCategory() + "</div>";
+        if (this.getPhone())
+            template += "<div>" + this.getPhone() + "</div>";
+        if (this.getAddress())
+            template += "<p>" + this.getAddress() + "</p>";
+        template += '</div>';
+        this.content = template;
+    };
+    Location.prototype.getContent = function () {
+        return this.content;
+    };
+    // FIX: Always returns "Not Available"
+    Location.prototype.setCategory = function (categories) {
+        var categoryName = 'Not Available';
+        if (categories.length > 0)
+            return this.category;
+        for (var i = 0; i < categories.length; i++) {
+            if (categories[i].primary) {
+                categoryName = categories[i].name;
+            }
+        }
+        this.category;
+    };
+    Location.prototype.getCategory = function () {
+        return this.category;
+    };
+    Location.prototype.setAddress = function (address) {
+        if (address === void 0) { address = null; }
+        this.address = address;
+    };
+    Location.prototype.getAddress = function () {
+        return this.address;
+    };
+    Location.prototype.setPhone = function (phone) {
+        if (phone === void 0) { phone = null; }
+        this.phone = phone;
+    };
+    Location.prototype.getPhone = function () {
+        return this.phone;
+    };
+    Location.prototype.onSelect = function () {
         var _this = this;
+        // Center map on marker
+        this.map.panTo(this.getPosition());
         // Run bounce animation once
         // Wait then, kill future animation loops
         this.setAnimation(google.maps.Animation.BOUNCE);
-        setTimeout(function () { return _this.setAnimation(null); }, 700);
-        // Open info window or dom based info
+        setTimeout(function () {
+            _this.setAnimation(null);
+            // Open info window or dom based info
+            _this.onClick();
+        }, 700);
+    };
+    Location.prototype.activate = function () {
+        this.setMap(this.map);
+    };
+    Location.prototype.deactivate = function () {
+        this.setMap(null);
+    };
+    Location.prototype.closeInfo = function () {
+        this.info.close();
     };
     return Location;
 }(google.maps.Marker));
 exports.Location = Location;
 
-},{}],127:[function(require,module,exports){
+},{"../utils":128}],127:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];

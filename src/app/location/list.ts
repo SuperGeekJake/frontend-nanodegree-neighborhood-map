@@ -1,8 +1,9 @@
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Observable';
 import {Utilities as _} from '../utils';
-import {Location} from './model';
 import {FourSquare} from './foursquare';
+import {Location} from './model';
+import {MapComponent} from '../map';
 import {jakeFavorites} from './favs';
 
 @Injectable()
@@ -33,7 +34,8 @@ export class LocationList {
   });
 
   constructor(
-    private _frsq: FourSquare
+    private _frsq: FourSquare,
+    private _map: MapComponent
   ) {
     this.get();
   }
@@ -55,17 +57,17 @@ export class LocationList {
       );
   }
 
-  addToMap(map, i: number = 0) {
+  addToMap(i: number = 0) {
     if (i === this.list$().length) return;
 
-    this.list$()[i].setMap(map);
+    this.list$()[i].setMap(this._map);
     i++;
 
     // Recursive with timeout
-    setTimeout(() => this.addToMap(map, i), 200);
+    setTimeout(() => this.addToMap(i), 200);
   }
 
-  private convertVenues(venueList: Array<any>) {
+  private convertVenues(venueList: Array<FourSquareVenue>) {
     // Filter known bad results/duplicates
     venueList = this.filter(venueList);
 
@@ -74,11 +76,7 @@ export class LocationList {
 
     // Loop through response results, creating "Location"s
     for (let i = 0; i < venueList.length; i++) {
-      this.list$.push(new Location({
-        title: _.titleCase(venueList[i].name),
-        position: new google.maps.LatLng(venueList[i].location.lat, venueList[i].location.lng),
-        animation: google.maps.Animation.DROP
-      }));
+      this.list$.push(new Location(venueList[i], this._map));
     }
 
     // Sort locations by title, ascending

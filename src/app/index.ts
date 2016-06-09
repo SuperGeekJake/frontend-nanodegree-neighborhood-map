@@ -18,7 +18,7 @@ class App {
     ko.applyBindings(list);
 
     list.loading$.subscribe((val: boolean) => {
-      if (val === false) list.addToMap(map);
+      if (val === false) list.addToMap();
     });
 
     // $(document).foundation();
