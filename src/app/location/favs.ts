@@ -4,11 +4,14 @@ export const jakeFavorites = [
     name: 'Star of Siam',
     location: {
       lat: 36.988521,
-      lng: -121.957482
+      lng: -121.957482,
+      address: '3005 Porter St'
     },
-    contact: {},
+    contact: {
+      phone: '8314790366'
+    },
     categories: [{
-      name: 'Restaurant',
+      name: 'Thai Restaurant',
       primary: true
     }]
   },
@@ -17,11 +20,14 @@ export const jakeFavorites = [
     name: 'Tortilla Flats',
     location: {
       lat: 36.987771,
-      lng: -121.957982
+      lng: -121.957982,
+      address: '4616 Soquel Dr'
     },
-    contact: {},
+    contact: {
+      phone: '8314761754'
+    },
     categories: [{
-      name: 'Restaurant',
+      name: 'Mexican Restaurant',
       primary: true
     }]
   },
@@ -30,11 +36,14 @@ export const jakeFavorites = [
     name: 'Sunrise Cafe',
     location: {
       lat: 36.988161,
-      lng: -121.956841
+      lng: -121.956841,
+      address: '4718 Soquel Dr'
     },
-    contact: {},
+    contact: {
+      phone: '8314620466'
+    },
     categories: [{
-      name: 'Restaurant',
+      name: 'Breakfast Spot',
       primary: true
     }]
   },
@@ -43,11 +52,14 @@ export const jakeFavorites = [
     name: 'Taquiera La Cabana',
     location: {
       lat: 36.989365,
-      lng: -121.957059
+      lng: -121.957059,
+      address: '2332 Mission St'
     },
-    contact: {},
+    contact: {
+      phone: '8314257261'
+    },
     categories: [{
-      name: 'Restaurant',
+      name: 'Mexican Restaurant',
       primary: true
     }]
   },
@@ -56,11 +68,14 @@ export const jakeFavorites = [
     name: 'Ugly Mug CoffeeHouse',
     location: {
       lat: 36.987899,
-      lng: -121.957545
+      lng: -121.957545,
+      address: '4640 Soquel Dr'
     },
-    contact: {},
+    contact: {
+      phone: '8314771341'
+    },
     categories: [{
-      name: 'Coffeeshop',
+      name: 'Coffee Shop',
       primary: true
     }]
   }

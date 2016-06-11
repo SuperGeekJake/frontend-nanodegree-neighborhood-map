@@ -3632,4 +3632,7 @@ table.hover tr:nth-of-type(even):hover {
 .location-list--loading {
   display: none; }
 
+.location__category {
+  padding-right: 8px; }
+
 /*# sourceMappingURL=main.css.map */
