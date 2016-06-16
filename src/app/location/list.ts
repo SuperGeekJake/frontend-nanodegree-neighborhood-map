@@ -1,4 +1,3 @@
-import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Observable';
 import {Utilities as _} from '../utils';
 import {FourSquare} from './foursquare';
@@ -6,36 +5,12 @@ import {Location} from './model';
 import {MapComponent} from '../map';
 import {jakeFavorites} from './favs';
 
-@Injectable()
-export class LocationList {
-  list$: KnockoutObservableArray<Location> = ko.observableArray([]);
-  loading$: KnockoutObservable<boolean> = ko.observable(true);
-  filter$: KnockoutObservable<string> = ko.observable('');
-
-  get$: KnockoutComputed<Location[]> = ko.pureComputed(() => {
-    let filter = this.filter$();
-    if (filter === '') return this.list$();
-
-    let index = 0;
-    return ko.utils.arrayFilter(this.list$(), (item: Location) => {
-      let title = item.getTitle().toLowerCase();
-
-      // Return item if filter is a substring of item
-      if (title.indexOf(filter.toLowerCase()) > -1) {
-        this.list$()[index].setVisible(true);
-        index++;
-        return true;
-      } else {
-        this.list$()[index].setVisible(false);
-        index++;
-        return false;
-      }
-    });
-  });
-
+export class ListComponent {
   constructor(
     private _frsq: FourSquare,
-    private _map: MapComponent
+    private _map: MapComponent,
+    private list$: KnockoutObservableArray<Location>,
+    private loading$: KnockoutObservable<boolean>
   ) {
     this.get();
   }

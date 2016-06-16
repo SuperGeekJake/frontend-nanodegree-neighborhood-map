@@ -14309,28 +14309,54 @@ var core_1 = require('@angular/core');
 var http_1 = require('@angular/http');
 var map_1 = require('./map');
 var location_1 = require('./location');
+var utils_1 = require('./utils');
 var injector = core_1.ReflectiveInjector.resolveAndCreate([
     http_1.HTTP_PROVIDERS,
     map_1.MapComponent,
-    location_1.FourSquare,
-    location_1.LocationList
+    location_1.FourSquare
 ]);
 var App = (function () {
-    function App(map, list) {
-        this.map = map;
-        this.list = list;
-        ko.applyBindings(list);
-        list.loading$.subscribe(function (val) {
-            if (val === false)
-                list.addToMap();
+    function App(_frsq, _map) {
+        var _this = this;
+        this._frsq = _frsq;
+        this._map = _map;
+        this.list$ = ko.observableArray([]);
+        this.listLoading$ = ko.observable(true);
+        this.listFilter$ = ko.observable('');
+        this.filteredList$ = ko.pureComputed(function () {
+            var filter = _this.listFilter$();
+            if (filter === '')
+                return _this.list$();
+            var index = 0;
+            return ko.utils.arrayFilter(_this.list$(), function (item) {
+                var title = item.getTitle().toLowerCase();
+                // Return item if filter is a substring of item
+                if (title.indexOf(filter.toLowerCase()) > -1) {
+                    _this.list$()[index].setVisible(true);
+                    index++;
+                    return true;
+                }
+                else {
+                    _this.list$()[index].setVisible(false);
+                    index++;
+                    return false;
+                }
+            });
         });
-        // $(document).foundation();
+        this._list = new location_1.ListComponent(this._frsq, this._map, this.list$, this.listLoading$);
+        ko.applyBindings(this);
+        this.listLoading$.subscribe(function (val) {
+            if (val === false)
+                _this._list.addToMap();
+        });
+        $(document).foundation();
     }
     return App;
 }());
-window.app = new App(injector.get(map_1.MapComponent), injector.get(location_1.LocationList));
+window._ = utils_1.Utilities;
+window.app = new App(injector.get(location_1.FourSquare), injector.get(map_1.MapComponent));
 
-},{"./location":124,"./map":127,"@angular/core":1,"@angular/http":77}],122:[function(require,module,exports){
+},{"./location":124,"./map":128,"./utils":129,"@angular/core":1,"@angular/http":77}],122:[function(require,module,exports){
 "use strict";
 exports.jakeFavorites = [
     {
@@ -14338,11 +14364,14 @@ exports.jakeFavorites = [
         name: 'Star of Siam',
         location: {
             lat: 36.988521,
-            lng: -121.957482
+            lng: -121.957482,
+            address: '3005 Porter St'
         },
-        contact: {},
+        contact: {
+            phone: '8314790366'
+        },
         categories: [{
-                name: 'Restaurant',
+                name: 'Thai Restaurant',
                 primary: true
             }]
     },
@@ -14351,11 +14380,14 @@ exports.jakeFavorites = [
         name: 'Tortilla Flats',
         location: {
             lat: 36.987771,
-            lng: -121.957982
+            lng: -121.957982,
+            address: '4616 Soquel Dr'
         },
-        contact: {},
+        contact: {
+            phone: '8314761754'
+        },
         categories: [{
-                name: 'Restaurant',
+                name: 'Mexican Restaurant',
                 primary: true
             }]
     },
@@ -14364,11 +14396,14 @@ exports.jakeFavorites = [
         name: 'Sunrise Cafe',
         location: {
             lat: 36.988161,
-            lng: -121.956841
+            lng: -121.956841,
+            address: '4718 Soquel Dr'
         },
-        contact: {},
+        contact: {
+            phone: '8314620466'
+        },
         categories: [{
-                name: 'Restaurant',
+                name: 'Breakfast Spot',
                 primary: true
             }]
     },
@@ -14377,11 +14412,14 @@ exports.jakeFavorites = [
         name: 'Taquiera La Cabana',
         location: {
             lat: 36.989365,
-            lng: -121.957059
+            lng: -121.957059,
+            address: '2332 Mission St'
         },
-        contact: {},
+        contact: {
+            phone: '8314257261'
+        },
         categories: [{
-                name: 'Restaurant',
+                name: 'Mexican Restaurant',
                 primary: true
             }]
     },
@@ -14390,11 +14428,14 @@ exports.jakeFavorites = [
         name: 'Ugly Mug CoffeeHouse',
         location: {
             lat: 36.987899,
-            lng: -121.957545
+            lng: -121.957545,
+            address: '4640 Soquel Dr'
         },
-        contact: {},
+        contact: {
+            phone: '8314771341'
+        },
         categories: [{
-                name: 'Coffeeshop',
+                name: 'Coffee Shop',
                 primary: true
             }]
     }
@@ -14457,53 +14498,49 @@ __export(require('./foursquare'));
 __export(require('./model'));
 __export(require('./list'));
 
-},{"./foursquare":123,"./list":125,"./model":126}],125:[function(require,module,exports){
+},{"./foursquare":123,"./list":126,"./model":127}],125:[function(require,module,exports){
 "use strict";
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var core_1 = require('@angular/core');
-var foursquare_1 = require('./foursquare');
+var LocationInfo = (function (_super) {
+    __extends(LocationInfo, _super);
+    function LocationInfo(options) {
+        var content = '<div class="content">';
+        content += "<h4>" + options.title + "</h4>";
+        content += '<p>';
+        if (options.category)
+            content += options.category + "<br>";
+        if (options.phone)
+            content += options.phone + "<br>";
+        if (options.address)
+            content += options.address + "<br>";
+        content += '</p>';
+        content += "<div>" + options.source + "</div>";
+        content += '</div>';
+        _super.call(this, {
+            content: content
+        });
+    }
+    return LocationInfo;
+}(google.maps.InfoWindow));
+exports.LocationInfo = LocationInfo;
+
+},{}],126:[function(require,module,exports){
+"use strict";
 var model_1 = require('./model');
-var map_1 = require('../map');
 var favs_1 = require('./favs');
-var LocationList = (function () {
-    function LocationList(_frsq, _map) {
-        var _this = this;
+var ListComponent = (function () {
+    function ListComponent(_frsq, _map, list$, loading$) {
         this._frsq = _frsq;
         this._map = _map;
-        this.list$ = ko.observableArray([]);
-        this.loading$ = ko.observable(true);
-        this.filter$ = ko.observable('');
-        this.get$ = ko.pureComputed(function () {
-            var filter = _this.filter$();
-            if (filter === '')
-                return _this.list$();
-            var index = 0;
-            return ko.utils.arrayFilter(_this.list$(), function (item) {
-                var title = item.getTitle().toLowerCase();
-                // Return item if filter is a substring of item
-                if (title.indexOf(filter.toLowerCase()) > -1) {
-                    _this.list$()[index].setVisible(true);
-                    index++;
-                    return true;
-                }
-                else {
-                    _this.list$()[index].setVisible(false);
-                    index++;
-                    return false;
-                }
-            });
-        });
+        this.list$ = list$;
+        this.loading$ = loading$;
         this.get();
     }
-    LocationList.prototype.get = function () {
+    ListComponent.prototype.get = function () {
         var _this = this;
         // Set to loading
         this.loading$(true);
@@ -14515,7 +14552,7 @@ var LocationList = (function () {
         this._frsq.getVenues()
             .subscribe(function (list) { return _this.convertVenues(list); }, function (error) { return _this.handleError(error); });
     };
-    LocationList.prototype.addToMap = function (i) {
+    ListComponent.prototype.addToMap = function (i) {
         var _this = this;
         if (i === void 0) { i = 0; }
         if (i === this.list$().length)
@@ -14525,7 +14562,7 @@ var LocationList = (function () {
         // Recursive with timeout
         setTimeout(function () { return _this.addToMap(i); }, 200);
     };
-    LocationList.prototype.convertVenues = function (venueList) {
+    ListComponent.prototype.convertVenues = function (venueList) {
         // Filter known bad results/duplicates
         venueList = this.filter(venueList);
         // Inject custom venues
@@ -14545,7 +14582,7 @@ var LocationList = (function () {
      * @param  {Location} right [description]
      * @return {number}         [description]
      */
-    LocationList.prototype.sort = function (left, right) {
+    ListComponent.prototype.sort = function (left, right) {
         var leftTitle = left.getTitle().toLowerCase();
         var rightTitle = right.getTitle().toLowerCase();
         if (leftTitle < rightTitle)
@@ -14555,7 +14592,7 @@ var LocationList = (function () {
         // No sort
         return 0;
     };
-    LocationList.prototype.filter = function (list) {
+    ListComponent.prototype.filter = function (list) {
         return list.filter(function (venue) {
             switch (venue.name.toLowerCase()) {
                 case 'soquel, california':
@@ -14570,12 +14607,12 @@ var LocationList = (function () {
             return true;
         });
     };
-    LocationList.prototype.handleError = function (error) {
+    ListComponent.prototype.handleError = function (error) {
         this.loading$(false);
         // TODO: Handle error, maybe re-request
         console.log(error);
     };
-    LocationList.prototype.reset = function () {
+    ListComponent.prototype.reset = function () {
         // Noop if list is empty
         if (this.list$().length === 0)
             return;
@@ -14586,15 +14623,11 @@ var LocationList = (function () {
         // Clear location list
         this.list$([]);
     };
-    LocationList = __decorate([
-        core_1.Injectable(), 
-        __metadata('design:paramtypes', [foursquare_1.FourSquare, map_1.MapComponent])
-    ], LocationList);
-    return LocationList;
+    return ListComponent;
 }());
-exports.LocationList = LocationList;
+exports.ListComponent = ListComponent;
 
-},{"../map":127,"./favs":122,"./foursquare":123,"./model":126,"@angular/core":1}],126:[function(require,module,exports){
+},{"./favs":122,"./model":127}],127:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -14602,6 +14635,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var utils_1 = require('../utils');
+var info_1 = require('./info');
 // Location data and marker
 var Location = (function (_super) {
     __extends(Location, _super);
@@ -14610,7 +14644,14 @@ var Location = (function (_super) {
         _super.call(this, {
             title: utils_1.Utilities.titleCase(venue.name),
             position: new google.maps.LatLng(venue.location.lat, venue.location.lng),
-            animation: google.maps.Animation.DROP
+            animation: google.maps.Animation.DROP,
+            icon: {
+                path: 'M0-48c-9.8 0-17.7 7.8-17.7 17.4 0 15.5 17.7 30.6 17.7 30.6s17.7-15.4 17.7-30.6c0-9.6-7.9-17.4-17.7-17.4z',
+                fillColor: (venue.jake) ? '#f44336' : '#2d5be3',
+                fillOpacity: 1,
+                scale: 1,
+                strokeWeight: 1
+            }
         });
         this.map = map;
         this.category = null;
@@ -14620,41 +14661,25 @@ var Location = (function (_super) {
         this.setCategory(venue.categories);
         this.setAddress(venue.location.address);
         this.setPhone(venue.contact.phone);
-        this.setContent();
-        this.info = new google.maps.InfoWindow({
-            content: this.getContent()
+        this.locationInfo = new info_1.LocationInfo({
+            title: this.getTitle(),
+            category: this.getCategory(),
+            phone: this.getPhone(),
+            address: this.getAddress(),
+            source: (venue.jake) ? 'Jake\'s Favorites' : 'Provided by FourSquare'
         });
         this.addListener('click', function () { return _this.onClick(); });
     }
     Location.prototype.onClick = function () {
-        this.info.open(this.map, this);
+        this.locationInfo.open(this.map, this);
     };
-    Location.prototype.setContent = function () {
-        var template = '<div class="content">';
-        template += "<h4>" + this.getTitle() + "</h4>";
-        if (this.getCategory())
-            template += "<div>" + this.getCategory() + "</div>";
-        if (this.getPhone())
-            template += "<div>" + this.getPhone() + "</div>";
-        if (this.getAddress())
-            template += "<p>" + this.getAddress() + "</p>";
-        template += '</div>';
-        this.content = template;
-    };
-    Location.prototype.getContent = function () {
-        return this.content;
-    };
-    // FIX: Always returns "Not Available"
     Location.prototype.setCategory = function (categories) {
         var categoryName = 'Not Available';
-        if (categories.length > 0)
-            return this.category;
-        for (var i = 0; i < categories.length; i++) {
-            if (categories[i].primary) {
-                categoryName = categories[i].name;
-            }
-        }
-        this.category;
+        categories.forEach(function (category) {
+            if (category.primary)
+                categoryName = category.name;
+        });
+        this.category = categoryName;
     };
     Location.prototype.getCategory = function () {
         return this.category;
@@ -14693,13 +14718,13 @@ var Location = (function (_super) {
         this.setMap(null);
     };
     Location.prototype.closeInfo = function () {
-        this.info.close();
+        this.locationInfo.close();
     };
     return Location;
 }(google.maps.Marker));
 exports.Location = Location;
 
-},{"../utils":128}],127:[function(require,module,exports){
+},{"../utils":129,"./info":125}],128:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -14721,11 +14746,15 @@ var MapComponent = (function (_super) {
     function MapComponent() {
         _super.call(this, document.getElementById('map'), {
             center: new google.maps.LatLng(36.988363, -121.9566037),
-            zoom: 16,
-            mapTypeId: google.maps.MapTypeId.HYBRID,
+            zoom: 19,
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
             mapTypeControlOptions: {
                 position: google.maps.ControlPosition.LEFT_BOTTOM
-            }
+            },
+            styles: [
+                { stylers: [{ visibility: 'simplified' }] },
+                { elementType: 'labels', stylers: [{ visibility: 'off' }] }
+            ]
         });
     }
     MapComponent = __decorate([
@@ -14736,13 +14765,42 @@ var MapComponent = (function (_super) {
 }(google.maps.Map));
 exports.MapComponent = MapComponent;
 
-},{"@angular/core":1}],128:[function(require,module,exports){
+},{"@angular/core":1}],129:[function(require,module,exports){
 "use strict";
 var Utilities = (function () {
     function Utilities() {
     }
     Utilities.titleCase = function (str) {
         return str.replace(/(^|\s)[a-z]/g, function (char) { return char.toUpperCase(); });
+    };
+    Utilities.categoryToIcon = function (category) {
+        switch (category.toLowerCase()) {
+            case 'mexican restaurant':
+            case 'chinese restaurant':
+            case 'thai restaurant':
+            case 'food':
+                return 'map-icon-restaurant';
+            case 'antique shop':
+                return 'map-icon-furniture-store';
+            case 'coffee shop':
+            case 'breakfast spot':
+                return 'map-icon-cafe';
+            case 'bar':
+            case 'dive bar':
+                return 'map-icon-bar';
+            case 'park':
+                return 'map-icon-park';
+            case 'library':
+                return 'map-icon-library';
+            case 'bagel shop':
+                return 'map-icon-bakery';
+            case 'automotive shop':
+                return 'map-icon-car-repair';
+            case 'boutique':
+                return 'map-icon-clothing-store';
+            default:
+                return 'map-icon-store';
+        }
     };
     return Utilities;
 }());

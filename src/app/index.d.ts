@@ -1,5 +1,6 @@
 interface Window {
   app: any;
+  _: any;
 }
 
 interface FourSquareCategory {
@@ -8,6 +9,7 @@ interface FourSquareCategory {
 }
 
 interface FourSquareVenue {
+  jake?: boolean;
   name: string;
   location: {
     lat: number;

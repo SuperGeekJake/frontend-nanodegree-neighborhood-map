@@ -1,9 +1,11 @@
 import {MapComponent} from '../map';
 import {Utilities as _} from '../utils';
+import {LocationInfo} from './info';
 
 // Location data and marker
 export class Location extends google.maps.Marker {
-  private info: google.maps.InfoWindow;
+  private locationInfo: LocationInfo;
+
   private category: string = null;
   private address: string = null;
   private content: string = null;
@@ -16,54 +18,43 @@ export class Location extends google.maps.Marker {
     super({
       title: _.titleCase(venue.name),
       position: new google.maps.LatLng(venue.location.lat, venue.location.lng),
-      animation: google.maps.Animation.DROP
+      animation: google.maps.Animation.DROP,
+      icon: {
+        path: 'M0-48c-9.8 0-17.7 7.8-17.7 17.4 0 15.5 17.7 30.6 17.7 30.6s17.7-15.4 17.7-30.6c0-9.6-7.9-17.4-17.7-17.4z',
+        fillColor: (venue.jake) ? '#f44336' : '#2d5be3',
+        fillOpacity: 1,
+        scale: 1,
+        strokeWeight: 1
+      }
     });
 
     this.setCategory(venue.categories);
     this.setAddress(venue.location.address);
     this.setPhone(venue.contact.phone);
-    this.setContent();
 
-    this.info = new google.maps.InfoWindow({
-      content: this.getContent()
+    this.locationInfo = new LocationInfo({
+      title: this.getTitle(),
+      category: this.getCategory(),
+      phone: this.getPhone(),
+      address: this.getAddress(),
+      source: (venue.jake) ? 'Jake\'s Favorites' : 'Provided by FourSquare'
     });
 
     this.addListener('click', () => this.onClick());
   }
 
   private onClick() {
-    this.info.open(this.map, this);
+    this.locationInfo.open(this.map, this);
   }
 
-  setContent() {
-    let template = '<div class="content">';
-    template += `<h4>${this.getTitle()}</h4>`;
-
-    if (this.getCategory()) template += `<div>${this.getCategory()}</div>`;
-    if (this.getPhone()) template += `<div>${this.getPhone()}</div>`;
-    if (this.getAddress()) template += `<p>${this.getAddress()}</p>`;
-    template += '</div>';
-
-    this.content = template;
-  }
-
-  getContent() {
-    return this.content;
-  }
-
-  // FIX: Always returns "Not Available"
   setCategory(categories) {
     let categoryName = 'Not Available';
 
-    if (categories.length > 0) return this.category;
+    categories.forEach((category) => {
+      if (category.primary) categoryName = category.name;
+    });
 
-    for (let i = 0; i < categories.length; i++) {
-      if (categories[i].primary) {
-        categoryName = categories[i].name;
-      }
-    }
-
-    this.category;
+    this.category = categoryName;
   }
 
   getCategory() {
@@ -110,6 +101,6 @@ export class Location extends google.maps.Marker {
   }
 
   closeInfo() {
-    this.info.close();
+    this.locationInfo.close();
   }
 }

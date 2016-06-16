@@ -1,7 +1,7 @@
 {
   "name": "fend-neighborhood-map",
   "version": "1.0.0",
-  "description": "",
+  "description": "Responsive map application powered by Google Maps and FourSquare",
   "main": "dist/index.html",
   "private": true,
   "scripts": {
