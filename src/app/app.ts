@@ -1,16 +1,7 @@
-import {ReflectiveInjector} from '@angular/core';
-import {HTTP_PROVIDERS} from '@angular/http';
 import {MapComponent} from './map';
 import {FourSquare, Location, ListComponent} from './location';
-import {Utilities as _} from './utils';
 
-var injector = ReflectiveInjector.resolveAndCreate([
-  HTTP_PROVIDERS,
-  MapComponent,
-  FourSquare
-]);
-
-class App {
+export class App {
   private _list: ListComponent;
   public list$: KnockoutObservableArray<Location> = ko.observableArray([]);
   public listLoading$: KnockoutObservable<boolean> = ko.observable(true);
@@ -42,7 +33,7 @@ class App {
   ) {
     this._list = new ListComponent(
       this._frsq,
-      this._map,
+      this._map.map,
       this.list$,
       this.listLoading$
     );
@@ -54,10 +45,10 @@ class App {
 
     $(document).foundation();
   }
-}
 
-window._ = _;
-window.app = new App(
-  injector.get(FourSquare),
-  injector.get(MapComponent)
-);
+  public retry(event) {
+    event.preventDefault();
+
+    this._list.get();
+  }
+}

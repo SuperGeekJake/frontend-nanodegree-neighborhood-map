@@ -21,7 +21,7 @@
         <nav id="offCanvas" class="off-canvas position-left reveal-for-large" data-off-canvas>
           <ul class="vertical menu">
             <li>
-              <input type="search" placeholder="Search…" disabled data-bind="value: listFilter$, valueUpdate: 'keyup', attr: {disabled: listLoading$()}" autocomplete="off">
+              <input type="search" placeholder="Search…" disabled data-bind="textInput:  listFilter$, attr: {disabled: listLoading$()}" autocomplete="off">
             </li>
           </ul>
           <ul class="location-list location-list--loading vertical menu" data-allow-all-closed="true" data-bind="template: {foreach: filteredList$}, css: {'location-list--loading': listLoading$()}">
@@ -49,17 +49,34 @@
                 <span class="title-bar-title">Soquel Village Map</span>
               </div>
             </div>
+
+            <div id="googleError" class="alert callout">
+              <h5>Google Maps Error</h5>
+              <div>The Google Maps API required by this application failed to load.</div>
+              <a onclick="document.location.reload()">Refresh</a>
+            </div>
+
+            <div id="fsError" class="alert callout" data-closable>
+              <h5>FourSquare Error</h5>
+              <div>This application failed to pull venue data from FourSquare.</div>
+              <a onclick="app.retry(event)">Try Again</a>
+              <button class="close-button" aria-label="Dismiss alert" type="button" data-close>
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
           </div>
         </main>
       </div>
     </div>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCWK9S6I0UP5elDtJ4BNJXmyS0eh9NWYhY"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCWK9S6I0UP5elDtJ4BNJXmyS0eh9NWYhY" onerror="googleError()"></script>
 
     <script src="../bower_components/what-input/what-input.min.js"></script>
     <script src="../bower_components/jquery/dist/jquery.min.js"></script>
     <script src="../bower_components/foundation-sites/dist/foundation.min.js"></script>
     <script src="../bower_components/knockout/dist/knockout.js"></script>
     <script src="js/bundle.js"></script>
+
+    <script>bootstrap()</script>
   </body>
 </html>

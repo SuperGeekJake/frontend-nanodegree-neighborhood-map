@@ -1,6 +1,8 @@
 interface Window {
   app: any;
   _: any;
+  googleError(): void;
+  bootstrap(): void;
 }
 
 interface FourSquareCategory {

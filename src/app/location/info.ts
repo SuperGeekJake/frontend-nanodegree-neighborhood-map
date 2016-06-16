@@ -1,17 +1,25 @@
-export class LocationInfo extends google.maps.InfoWindow {
-  constructor(options: any) {
+class LocationInfo {
+  private info: google.maps.InfoWindow = new google.maps.InfoWindow();
+  set(location) {
+    this.info.close();
+
     let content = '<div class="content">';
-    content += `<h4>${options.title}</h4>`;
+    content += `<h4>${location.getTitle()}</h4>`;
     content += '<p>'
-    if (options.category) content += `${options.category}<br>`;
-    if (options.phone) content += `${options.phone}<br>`;
-    if (options.address) content += `${options.address}<br>`;
+    if (location.getCategory()) content += `${location.getCategory()}<br>`;
+    if (location.getPhone()) content += `${location.getPhone()}<br>`;
+    if (location.getAddress()) content += `${location.getAddress()}<br>`;
     content += '</p>';
-    content += `<div>${options.source}</div>`;
+    content += `<div>${(location.source === 'jake') ? 'Jake\'s Favorites' : 'Provided by FourSquare'}</div>`;
     content += '</div>';
 
-    super({
-      content: content
-    });
+    this.info.setContent(content);
+    this.info.open(location.map, location);
+  }
+
+  unset() {
+    this.info.close();
   }
 }
+
+export const locationInfo = new LocationInfo();

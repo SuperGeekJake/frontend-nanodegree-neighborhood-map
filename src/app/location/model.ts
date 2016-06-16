@@ -1,19 +1,18 @@
 import {MapComponent} from '../map';
 import {Utilities as _} from '../utils';
-import {LocationInfo} from './info';
+import {locationInfo} from './info';
 
 // Location data and marker
 export class Location extends google.maps.Marker {
-  private locationInfo: LocationInfo;
-
   private category: string = null;
   private address: string = null;
   private content: string = null;
   private phone: string = null;
+  private source: string;
 
   constructor(
     venue: FourSquareVenue,
-    private map: MapComponent
+    public map: google.maps.Map
   ) {
     super({
       title: _.titleCase(venue.name),
@@ -31,20 +30,22 @@ export class Location extends google.maps.Marker {
     this.setCategory(venue.categories);
     this.setAddress(venue.location.address);
     this.setPhone(venue.contact.phone);
-
-    this.locationInfo = new LocationInfo({
-      title: this.getTitle(),
-      category: this.getCategory(),
-      phone: this.getPhone(),
-      address: this.getAddress(),
-      source: (venue.jake) ? 'Jake\'s Favorites' : 'Provided by FourSquare'
-    });
+    this.setSource(venue.jake);
 
     this.addListener('click', () => this.onClick());
   }
 
   private onClick() {
-    this.locationInfo.open(this.map, this);
+    // Run bounce animation once
+    // Wait then, kill future animation loops
+    locationInfo.unset();
+    this.setAnimation(google.maps.Animation.BOUNCE);
+    setTimeout(() => {
+      this.setAnimation(null);
+
+      // Open info window or dom based info
+      locationInfo.set(this);
+    }, 700);
   }
 
   setCategory(categories) {
@@ -77,19 +78,21 @@ export class Location extends google.maps.Marker {
     return this.phone;
   }
 
+  setSource(jake: boolean = false) {
+    this.source = (jake) ? 'jake' : 'foursquare';
+  }
+
+  getSource() {
+    return this.source;
+  }
+
   onSelect() {
+    // Close menu
+    $('#offCanvas').foundation('close');
+
     // Center map on marker
     this.map.panTo(this.getPosition());
-
-    // Run bounce animation once
-    // Wait then, kill future animation loops
-    this.setAnimation(google.maps.Animation.BOUNCE);
-    setTimeout(() => {
-      this.setAnimation(null);
-
-      // Open info window or dom based info
-      this.onClick();
-    }, 700);
+    this.onClick();
   }
 
   activate() {
@@ -98,9 +101,5 @@ export class Location extends google.maps.Marker {
 
   deactivate() {
     this.setMap(null);
-  }
-
-  closeInfo() {
-    this.locationInfo.close();
   }
 }

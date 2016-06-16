@@ -8,7 +8,7 @@ import {jakeFavorites} from './favs';
 export class ListComponent {
   constructor(
     private _frsq: FourSquare,
-    private _map: MapComponent,
+    private _map: google.maps.Map,
     private list$: KnockoutObservableArray<Location>,
     private loading$: KnockoutObservable<boolean>
   ) {
@@ -98,8 +98,7 @@ export class ListComponent {
   private handleError(error: any) {
     this.loading$(false);
 
-    // TODO: Handle error, maybe re-request
-    console.log(error);
+    $('#fsError').show();
   }
 
   private reset() {
