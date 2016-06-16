@@ -69,14 +69,20 @@
       </div>
     </div>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCWK9S6I0UP5elDtJ4BNJXmyS0eh9NWYhY" onerror="googleError()"></script>
-
     <script src="../bower_components/what-input/what-input.min.js"></script>
     <script src="../bower_components/jquery/dist/jquery.min.js"></script>
     <script src="../bower_components/foundation-sites/dist/foundation.min.js"></script>
     <script src="../bower_components/knockout/dist/knockout.js"></script>
-    <script src="js/bundle.js"></script>
 
-    <script>bootstrap()</script>
+    <script>
+      function bootstrap() {
+        $('body').append('<script src="js/bundle.js"><\/script>');
+      }
+
+      function googleError() {
+        $('#googleError').show();
+      };
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCWK9S6I0UP5elDtJ4BNJXmyS0eh9NWYhY&callback=bootstrap" onerror="googleError()" async defer></script>
   </body>
 </html>

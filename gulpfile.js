@@ -28,7 +28,7 @@ const argv = require('yargs')
 const srcPaths = {
   images: 'src/images/**/*',
   pages: 'src/**/*.html',
-  app: 'src/app/bootstrap.ts',
+  app: 'src/app/index.ts',
   scripts: 'src/app/**/*.ts',
   styles: 'src/styles/**/*.scss'
 };

@@ -1,5 +1,10 @@
 import {MapComponent} from './map';
 import {FourSquare, Location, ListComponent} from './location';
+import {ReflectiveInjector} from '@angular/core';
+import {HTTP_PROVIDERS} from '@angular/http';
+import {Utilities as _} from './utils';
+
+window._ = _;
 
 export class App {
   private _list: ListComponent;
@@ -52,3 +57,14 @@ export class App {
     this._list.get();
   }
 }
+
+const injector = ReflectiveInjector.resolveAndCreate([
+  HTTP_PROVIDERS,
+  MapComponent,
+  FourSquare
+]);
+
+window.app = new App(
+  injector.get(FourSquare),
+  injector.get(MapComponent)
+);
